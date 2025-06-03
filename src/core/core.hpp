@@ -4,7 +4,9 @@ namespace CORE {
 
     class Core {
     public:
+        
     private:
+        
     };
     
 } // CORE
