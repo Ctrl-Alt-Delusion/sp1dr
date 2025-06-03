@@ -3,15 +3,19 @@
 #include "screen.hpp"
 #include "renderer.hpp"
 
+#include <thread>
+#include <chrono>
+
 namespace CORE {
 
     class Core {
     public:
-        Core();
+        Core();          
         void game_loop();
+
     private:
-        Screen screen      {};
-        Renderer renderer  {};
+        Screen   screen;
+        Renderer renderer;
     };
-    
-} // CORE
+
+} // namespace CORE

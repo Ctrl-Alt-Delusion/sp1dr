@@ -34,7 +34,7 @@ namespace CORE {
         bool set_pixel(pair_uint position, char rune);
 
         const std::vector<std::vector<char>>& get_screen_buffer() const {
-            return screen_buffer;
+            return this->screen_buffer;
         }
     private:
         pair_uint      screen_size     {};

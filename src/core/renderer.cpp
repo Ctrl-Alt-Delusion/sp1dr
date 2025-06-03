@@ -4,6 +4,9 @@
 
 namespace CORE {
 
+    Renderer::Renderer(Screen& screen_ref)
+        : screen(screen_ref) {}
+
     void Renderer::render() {
         screen.clear_screen();
 
