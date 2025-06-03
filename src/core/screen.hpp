@@ -29,15 +29,17 @@ namespace CORE {
         Screen(pair_uint screen_size = {80, 45}, ScreenSettings settings = DEFAULT);
         ~Screen() = default;
 
+        void clear_screen();
+        bool set_pixel(pair_uint position, char rune);
 
+        const std::vector<std::vector<char>>& get_screen_buffer() const {
+            return screen_buffer;
+        }
     private:
         pair_uint      screen_size     {};
         ScreenSettings settings        {};
 
         std::vector<std::vector<char>> screen_buffer {};
-
-        void clear_screen();
-        bool set_pixel(pair_uint position, char rune);
     };
 
 
