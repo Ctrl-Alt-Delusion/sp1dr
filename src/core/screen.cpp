@@ -5,7 +5,7 @@ namespace CORE {
     // Screen constructor doing initial config 
     Screen::Screen(pair_uint size, ScreenSettings set) {
         this->screen_size = size;
-        this->settings = settings;
+        this->settings = set;
 
         this->screen_buffer = std::vector<std::vector<char>>(
             this->screen_size.x,
@@ -32,7 +32,7 @@ namespace CORE {
             dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
             SetConsoleMode(hOut, dwMode);
         #endif
-        
+
         std::cout << "\033[2J\033[H" << std::flush;
     }
 
