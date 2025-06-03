@@ -17,6 +17,8 @@ namespace CORE {
         screen.set_pixel({25, 22}, 'X');
     }
 
+
+    // GAME LOGIC FOR CUBE DEMO
     void Core::game_logic(float angle) {
         std::vector<MATH::Vec2<int>> projected;
         
@@ -39,10 +41,10 @@ namespace CORE {
             v = v.rotate_y(angle).rotate_x(angle * 0.5f);
             
             // Move cube away from camera to avoid z-division problems
-            v.z += 2.0f; // Sweet spot that gives good perspective without extreme distortion
+            v.z += 4.0f; // Sweet spot that gives good perspective without extreme distortion
             
             // Project the 3D point to 2D screen coordinates
-            auto p = v.project(3.0f);
+            auto p = v.project(5.0f);
             
             // ASPECT RATIO COMPENSATION: Apply different scaling to X and Y
             // X-axis: Use full scaling to take advantage of horizontal screen space
@@ -64,7 +66,7 @@ namespace CORE {
         
         // Draw all edges of the cube using the aspect-corrected coordinates
         for (const auto& [start, end] : cube.edges) {
-            draw_line(projected[start], projected[end], screen, '#');
+            draw_line(projected[start], projected[end], screen, '@');
         }
     }
 
