@@ -59,5 +59,45 @@ namespace MATH {
         inline bool operator==(const Vec3& other) const {
             return (x == other.x && y == other.y && z == other.z);
         }
+
+        Vec3 rotate_x(float angle_rad) {
+            float cos_a = cos(angle_rad);  
+            float sin_a = sin(angle_rad);
+            return {
+                x,                          
+                y * cos_a - z * sin_a,    
+                z * cos_a + y * sin_a
+            };
+        }
+
+        Vec3 rotate_y(float angle_rad) {
+            float cos_a = cos(angle_rad);  
+            float sin_a = sin(angle_rad);
+            return {
+                x * cos_a + z * sin_a,
+                y,
+                z * cos_a - x * sin_a,
+            };
+        }
+
+        Vec3 rotate_z(float angle_rad) {
+            float cos_a = cos(angle_rad);  
+            float sin_a = sin(angle_rad);
+            return {
+                x * cos_a - y * sin_a,    
+                x * sin_a + y * cos_a,    
+                z 
+            };
+        }
+
+        Vec2<T> project(float focal_length = 1.0f) {
+            if (z == 0) return {x, y}; 
+            return {
+                (focal_length * x) / z,
+                (focal_length * y) / z
+            };
+        }
     };
+
 }
+
