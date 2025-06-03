@@ -1,140 +1,128 @@
-# Cross-Platform Makefile for sp1dr
-# Works on Windows, macOS, Linux, FreeBSD, RedStar OS, and other Unix-like systems
+# Cross-platform Makefile for C++ project
+# Automatically detects platform and uses appropriate commands
 
-# Compiler settings - consistent across platforms
-CXX := g++
-CXXFLAGS := -Wall -Wextra -std=c++17 -I./src
-
-# Project structure
-SRC_DIR := src
-BIN_NAME := sp1dr
-
-# Platform detection using multiple methods for maximum compatibility
-# This approach works even when OS environment variable isn't set
-UNAME_S := $(shell uname -s 2>/dev/null || echo "Unknown")
-UNAME_M := $(shell uname -m 2>/dev/null || echo "Unknown")
-
-# Initialize platform-specific variables
-PLATFORM := unknown
-EXE_EXT := 
-RM_CMD := rm -f
-RM_FLAGS := 
-PATH_SEP := /
-SHELL_NULL := /dev/null
-
-# Windows detection (handles multiple Windows environments)
-# Check for common Windows indicators in multiple ways
-ifneq ($(findstring Windows,$(OS)),)
+# Detect platform
+ifeq ($(OS),Windows_NT)
     PLATFORM := windows
-else ifneq ($(findstring MINGW,$(UNAME_S)),)
-    PLATFORM := windows
-else ifneq ($(findstring MSYS,$(UNAME_S)),)
-    PLATFORM := windows
-else ifneq ($(findstring CYGWIN,$(UNAME_S)),)
-    PLATFORM := windows
-else ifeq ($(UNAME_S),)
-    # If uname fails completely, assume Windows (common in some Windows shells)
-    PLATFORM := windows
+    DETECTED_OS := Windows
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        PLATFORM := linux
+        DETECTED_OS := Linux
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        PLATFORM := macos
+        DETECTED_OS := macOS
+    endif
 endif
 
-# Apply platform-specific settings
+# Set null device based on platform
 ifeq ($(PLATFORM),windows)
+    NULL_DEVICE := nul
+    PATH_SEP := \\
     EXE_EXT := .exe
-    # Use cross-platform delete command that works in both cmd and PowerShell
-    RM_CMD := if exist
-    RM_FLAGS := del /Q /F
-    SHELL_NULL := NUL
-    # Windows file discovery - works without external batch files
-    SOURCES := $(shell dir /s /b "$(SRC_DIR)\*.cpp" 2>$(SHELL_NULL) | tr '\\' '/')
-    # Fallback if dir command fails (e.g., in Git Bash)
+else
+    NULL_DEVICE := /dev/null
+    PATH_SEP := /
+    EXE_EXT :=
+endif
+
+# Project configuration
+PROJECT_NAME := sp1dr
+SRC_DIR := src
+BUILD_DIR := build
+TARGET := $(PROJECT_NAME)$(EXE_EXT)
+
+# Compiler settings
+CXX := g++
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2
+LDFLAGS :=
+
+# Platform-specific source file discovery
+ifeq ($(PLATFORM),windows)
+    # Try multiple methods for Windows compatibility
+    # Method 1: PowerShell (most reliable on modern Windows)
+    SOURCES := $(shell powershell -Command "Get-ChildItem -Recurse -Filter '*.cpp' -Path '$(SRC_DIR)' | ForEach-Object { $$_.FullName -replace '\\\\', '/' }" 2>$(NULL_DEVICE))
+    
+    # Method 2: Git Bash find (if PowerShell fails)
     ifeq ($(SOURCES),)
-        SOURCES := $(shell find $(SRC_DIR) -name "*.cpp" 2>$(SHELL_NULL) || echo "")
+        SOURCES := $(shell find $(SRC_DIR) -name "*.cpp" 2>$(NULL_DEVICE))
+    endif
+    
+    # Method 3: Windows FOR command (fallback)
+    ifeq ($(SOURCES),)
+        SOURCES := $(shell for /R $(SRC_DIR) %%f in (*.cpp) do @echo %%f 2>$(NULL_DEVICE))
+        SOURCES := $(subst \,/,$(SOURCES))
+    endif
+    
+    # Method 4: Manual specification (ultimate fallback)
+    ifeq ($(SOURCES),)
+        SOURCES := src/main.cpp src/core/core.cpp src/core/renderer.cpp src/core/screen.cpp
     endif
 else
-    # Unix-like systems (Linux, macOS, FreeBSD, RedStar OS, etc.)
-    SOURCES := $(shell find $(SRC_DIR) -name "*.cpp" 2>$(SHELL_NULL) || echo "")
+    # Unix-like systems (Linux, macOS)
+    SOURCES := $(shell find $(SRC_DIR) -name "*.cpp" 2>$(NULL_DEVICE))
 endif
 
-# Final binary name with platform-appropriate extension
-BIN := $(BIN_NAME)$(EXE_EXT)
-
-# Generate object file names from source files
+# Generate object file names
 OBJECTS := $(SOURCES:.cpp=.o)
 
-# Phony targets (targets that don't represent files)
-.PHONY: all build run clean rebuild debug help platform-info
+# Create build directory if it doesn't exist
+$(shell mkdir -p $(BUILD_DIR) 2>$(NULL_DEVICE))
 
 # Default target
-all: build
+.PHONY: all clean info help
 
-# Quick rebuild cycle - clean, build, and run
-rebuild: clean build run
+all: info $(TARGET)
 
-# Main build target
-build: platform-info $(BIN)
+# Display build information
+info:
+	@echo "Building $(PROJECT_NAME) for $(DETECTED_OS)"
+	@echo "Compiler: $(CXX)"
+	@echo "Sources found: $(words $(SOURCES)) files"
+	@echo "Sources: $(SOURCES)"
+	@echo ""
 
-# Link the final executable
-$(BIN): $(OBJECTS)
-	@echo "Linking executable: $@"
-	$(CXX) $(CXXFLAGS) -o $@ $^
-	@echo "Build successful! Executable: $@"
+# Link the executable
+$(TARGET): $(OBJECTS)
+	@echo "Linking $(TARGET)..."
+	$(CXX) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+	@echo "Build complete: $(TARGET)"
 
 # Compile source files to object files
 %.o: %.cpp
-	@echo "Compiling: $<"
+	@echo "Compiling $<..."
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Run the built executable
-run: build
-	@echo "Running $(BIN)..."
-	@./$(BIN)
-
-# Cross-platform clean command
+# Clean build artifacts
 clean:
-	@echo "Cleaning build artifacts..."
 ifeq ($(PLATFORM),windows)
-	@for %%f in ($(BIN) $(OBJECTS)) do @if exist "%%f" $(RM_FLAGS) "%%f"
+	@echo "Cleaning build artifacts (Windows)..."
+	@if exist $(TARGET) del /Q $(TARGET) 2>$(NULL_DEVICE)
+	@for /R $(SRC_DIR) %%f in (*.o) do @if exist "%%f" del /Q "%%f" 2>$(NULL_DEVICE)
 else
-	@$(RM_CMD) $(BIN) $(OBJECTS) 2>$(SHELL_NULL) || true
+	@echo "Cleaning build artifacts (Unix)..."
+	@rm -f $(TARGET) $(OBJECTS) 2>$(NULL_DEVICE)
 endif
-	@echo "Clean completed."
+	@echo "Clean complete."
 
-# Debug information - shows detected platform and file lists
-debug: platform-info
-	@echo "=== Build Configuration Debug ==="
-	@echo "CXX = $(CXX)"
-	@echo "CXXFLAGS = $(CXXFLAGS)"
-	@echo "SRC_DIR = $(SRC_DIR)"
-	@echo "BIN = $(BIN)"
-	@echo "SOURCES = $(SOURCES)"
-	@echo "OBJECTS = $(OBJECTS)"
-	@echo "RM_CMD = $(RM_CMD)"
-	@echo "================================="
-
-# Display platform information
-platform-info:
-	@echo "=== Platform Detection ==="
-	@echo "Detected Platform: $(PLATFORM)"
-	@echo "System: $(UNAME_S)"
-	@echo "Architecture: $(UNAME_M)"
-	@echo "Executable Extension: $(EXE_EXT)"
-	@echo "=========================="
-
-# Help target - explains available commands
+# Help target
 help:
 	@echo "Available targets:"
-	@echo "  all        - Build the project (default)"
-	@echo "  build      - Compile and link the executable"
-	@echo "  run        - Build and run the executable"
-	@echo "  clean      - Remove build artifacts"
-	@echo "  rebuild    - Clean, build, and run"
-	@echo "  debug      - Show build configuration"
-	@echo "  platform-info - Show detected platform"
-	@echo "  help       - Show this help message"
+	@echo "  all     - Build the project (default)"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  info    - Show build information"
+	@echo "  help    - Show this help message"
+	@echo ""
+	@echo "Platform detected: $(DETECTED_OS)"
+	@echo "Target executable: $(TARGET)"
 
-# Automatic dependency generation for header files
-# This ensures that when you modify a header file, dependent source files recompile
--include $(OBJECTS:.o=.d)
-
-%.d: %.cpp
-	@$(CXX) $(CXXFLAGS) -MM -MT $(@:.d=.o) $< > $@
+# Debug target to show variables
+debug:
+	@echo "Platform: $(PLATFORM)"
+	@echo "OS: $(DETECTED_OS)"
+	@echo "Sources: $(SOURCES)"
+	@echo "Objects: $(OBJECTS)"
+	@echo "CXX: $(CXX)"
+	@echo "CXXFLAGS: $(CXXFLAGS)"
