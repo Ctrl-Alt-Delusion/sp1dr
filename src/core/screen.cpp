@@ -2,6 +2,8 @@
 
 namespace CORE {
 
+    ScreenSettings DEFAULT_SETTINGS {60};
+    
     // Screen constructor doing initial config 
     Screen::Screen(pair_uint size, ScreenSettings set) {
         this->screen_size = size;

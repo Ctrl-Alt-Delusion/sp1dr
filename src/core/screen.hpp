@@ -19,14 +19,15 @@ namespace CORE {
         size_t frameRate;
     };
 
-    ScreenSettings DEFAULT {60};
+    extern ScreenSettings DEFAULT_SETTINGS;
+
 
     // Screen defines all functionality pertaining
     // to the literal screen shown in every frame
     // and the ability to paint the screen with pixels
     class Screen {
     public:
-        Screen(pair_uint screen_size = {80, 45}, ScreenSettings settings = DEFAULT);
+        Screen(pair_uint screen_size = {80, 45}, ScreenSettings settings = DEFAULT_SETTINGS);
         ~Screen() = default;
 
         void clear_screen();

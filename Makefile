@@ -1,12 +1,12 @@
 CXX := g++
-CXXFLAGS := -Wall -Wextra -std=c++17
+CXXFLAGS := -Wall -Wextra -std=c++17 -I./src
 SRC_DIR := src
 BIN := sp1dr
 
-SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+SOURCES := $(shell find $(SRC_DIR) -name '*.cpp')
 OBJECTS := $(SOURCES:.cpp=.o)
 
-.PHONY: all build run clean rebuild
+.PHONY: all build run clean rebuild debug
 
 all: build
 
@@ -17,7 +17,7 @@ build: $(BIN)
 $(BIN): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp
+%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 run: build
