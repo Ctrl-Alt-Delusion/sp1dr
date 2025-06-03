@@ -3,15 +3,15 @@
 namespace CORE {
 
     ScreenSettings DEFAULT_SETTINGS {60};
-    
+
     // Screen constructor doing initial config 
     Screen::Screen(pair_uint size, ScreenSettings set) {
         this->screen_size = size;
         this->settings = set;
 
         this->screen_buffer = std::vector<std::vector<char>>(
-            this->screen_size.x,
-            std::vector<char>(this->screen_size.y, ' ') 
+            this->screen_size.y,
+            std::vector<char>(this->screen_size.x, ' ') 
         );
     }
 
@@ -21,7 +21,7 @@ namespace CORE {
             std::cerr << "invalid position coordinates entered | x : " << pos.x << " | y : " << pos.y << std::endl;
             return false;
         }
-        this->screen_buffer[pos.x][pos.y] = rune;
+        this->screen_buffer[pos.y][pos.x] = rune;
         change = 1;
         return true; 
     }
