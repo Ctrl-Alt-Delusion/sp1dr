@@ -41,6 +41,10 @@ namespace CORE {
             return change;
         }
 
+        const pair_uint get_size() {
+            return this->screen_size;
+        } 
+
         void set_change(bool c) {
             change = c;
         }
