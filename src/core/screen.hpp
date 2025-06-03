@@ -36,11 +36,21 @@ namespace CORE {
         const std::vector<std::vector<char>>& get_screen_buffer() const {
             return this->screen_buffer;
         }
+
+        const bool get_change() const {
+            return change;
+        }
+
+        void set_change(bool c) {
+            change = c;
+        }
     private:
         pair_uint      screen_size     {};
         ScreenSettings settings        {};
 
         std::vector<std::vector<char>> screen_buffer {};
+
+        bool change {};
     };
 
 

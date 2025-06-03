@@ -11,6 +11,11 @@ namespace MATH {
             return sqrt(x * x + y * y);
         }
 
+        Vec2 normalize() const {
+            const T m = magnitude();
+            return { x / m, y / m };
+        }
+
         inline Vec2 operator+(const Vec2& other) const {
             return {x + other.x, y + other.y};
         }
@@ -30,6 +35,11 @@ namespace MATH {
 
         T magnitude() const {
             return sqrt(x * x + y * y + z * z);
+        }
+
+        Vec3 normalize() const {
+            const T m = magnitude();
+            return { x / m, y / m, z / m };
         }
 
         Vec3 cross(const Vec3& other) const {

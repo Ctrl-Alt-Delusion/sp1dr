@@ -12,6 +12,7 @@ namespace CORE {
     public:
         Core();          
         void game_loop();
+        void init();
 
     private:
         Screen   screen;

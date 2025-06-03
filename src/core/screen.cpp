@@ -22,6 +22,7 @@ namespace CORE {
             return false;
         }
         this->screen_buffer[pos.x][pos.y] = rune;
+        change = 1;
         return true; 
     }
 
