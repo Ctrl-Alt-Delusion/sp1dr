@@ -4,6 +4,14 @@
 
 #include <vector>
 
+#ifdef IN
+#undef IN
+#endif
+
+#ifdef OUT
+#undef OUT
+#endif
+
 namespace CORE {
     enum Direction { LEFT, RIGHT, UP, DOWN, IN, OUT };
 

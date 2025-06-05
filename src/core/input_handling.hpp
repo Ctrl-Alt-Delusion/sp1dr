@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -12,49 +14,25 @@
 #endif
 
 namespace CORE {
+    // ==== PLATFORM-SPECIFIC: Input Stuff ====
+    #if !defined(_WIN32)
 
-// ==== PLATFORM-SPECIFIC: Input Stuff ====
-#if defined(_WIN32)
+    void enable_raw_mode() {
+        termios term;
+        tcgetattr(STDIN_FILENO, &term);
+        term.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    }
 
-bool kbhit() {
-    return _kbhit();
-}
+    void disable_raw_mode() {
+        termios term;
+        tcgetattr(STDIN_FILENO, &term);
+        term.c_lflag |= (ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    }
 
-char getch() {
-    return _getch();
-}
+    #endif
 
-#else
-
-void enable_raw_mode() {
-    termios term;
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
-}
-
-void disable_raw_mode() {
-    termios term;
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag |= (ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
-}
-
-bool kbhit() {
-    timeval tv = {0L, 0L};
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(STDIN_FILENO, &fds);
-    return select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &tv) > 0;
-}
-
-char getch() {
-    char ch = 0;
-    read(STDIN_FILENO, &ch, 1);
-    return ch;
-}
-
-#endif
-
-
+    bool kbhit();
+    char getch();
 }

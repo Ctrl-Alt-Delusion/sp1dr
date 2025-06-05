@@ -1,0 +1,31 @@
+#include "input_handling.hpp"
+
+namespace CORE {
+    // ==== PLATFORM-SPECIFIC: Input Stuff ====
+    #if defined(_WIN32)
+
+    bool kbhit() {
+        return _kbhit();
+    }
+
+    char getch() {
+        return _getch();
+    }
+    #else
+
+    bool kbhit() {
+        timeval tv = {0L, 0L};
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(STDIN_FILENO, &fds);
+        return select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &tv) > 0;
+    }
+
+    char getch() {
+        char ch = 0;
+        read(STDIN_FILENO, &ch, 1);
+        return ch;
+    }
+
+    #endif
+}
