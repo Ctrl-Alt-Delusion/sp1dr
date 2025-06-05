@@ -2,7 +2,9 @@
 
 #include "screen.hpp"
 #include "renderer.hpp"
+#include "camera.hpp"
 #include "../demo/cube_demo.hpp"
+#include "input_handling.hpp"
 
 #include <thread>
 #include <chrono>
@@ -16,7 +18,7 @@ namespace CORE {
         void game_loop();
         
         void game_logic();
-        void game_logic(float angle);
+        void game_logic(OrbitCamera& camera);
 
         void init();
 

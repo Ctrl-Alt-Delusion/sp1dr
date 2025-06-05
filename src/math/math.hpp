@@ -52,6 +52,14 @@ namespace MATH {
             return {x + other.x, y + other.y, z + other.z};
         }
 
+        inline Vec3 operator*(const int o) const {
+            return {x * o, y * o, z * o};
+        }
+
+        inline Vec3 operator-(const Vec3& other) const {
+            return {x - other.x, y - other.y, z - other.z};
+        }
+
         inline T operator*(const Vec3& other) const {
             return x * other.x + y * other.y + z * other.z;
         }
@@ -84,8 +92,8 @@ namespace MATH {
             float cos_a = cos(angle_rad);  
             float sin_a = sin(angle_rad);
             return {
-                x * cos_a - y * sin_a,    
-                x * sin_a + y * cos_a,    
+                x * cos_a - y * sin_a,
+                x * sin_a + y * cos_a, 
                 z 
             };
         }
