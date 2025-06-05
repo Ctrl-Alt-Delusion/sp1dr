@@ -30,13 +30,12 @@ namespace CORE {
     void Screen::clear_screen() {
         #if defined(_WIN32)
             HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            DWORD dwMode = 0;
-            GetConsoleMode(hOut, &dwMode);
-            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-            SetConsoleMode(hOut, dwMode);
+            COORD topLeft = {0, 0};
+            SetConsoleCursorPosition(hOut, topLeft);
+        #else
+            std::cout << "\033[2J\033[H";
         #endif
-
-        std::cout << "\033[2J\033[H" << std::flush;
     }
+
 
 }
