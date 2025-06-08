@@ -40,6 +40,14 @@ namespace CORE {
 
         // Adjust angles based on input
         void handle_movement(Direction direction);
+
+        MATH::Vec3<float> world_to_view(const MATH::Vec3<float>& point) const {
+            auto view = point;
+            view = view.rotate_y(-yaw).rotate_x(-pitch);
+            view.z += dist;
+            return view;
+        }
+
     };
 
 }

@@ -5,6 +5,8 @@
 #include "camera.hpp"
 #include "../meshes/meshes.hpp"
 #include "input_handling.hpp"
+#include "../entity/entity.hpp"
+#include "../entity/entity_manager.hpp"
 
 #include <algorithm>
 #include <thread>
@@ -19,7 +21,7 @@ namespace CORE {
         void game_loop();
         
         void game_logic();
-        void game_logic(OrbitCamera& camera);
+        void game_logic(OrbitCamera& camera, ENTITY::EntityManager& entity_manager);
 
         void init();
 
@@ -29,5 +31,11 @@ namespace CORE {
     };
 
     void draw_line(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, CORE::Screen& screen, char pixel = '#');
+    void draw_line_zbuffered(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1,
+                            float z0, float z1,
+                            CORE::Screen& screen,
+                            std::vector<std::vector<float>>& z_buffer,
+                            char pixel);
+    
 
 } // namespace CORE

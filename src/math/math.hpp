@@ -105,6 +105,14 @@ namespace MATH {
                 (focal_length * y) / z
             };
         }
+
+        Vec3<T> operator-() const {
+            return {-x, -y, -z};
+        }
+
+        Vec3<T> scale(Vec3<T> scale_factor) const {
+            return {x * scale_factor.x, y * scale_factor.y, z * scale_factor.z};
+        }
     };
 
 }
