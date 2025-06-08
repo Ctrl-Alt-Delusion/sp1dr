@@ -2,7 +2,7 @@
 
 namespace CORE {
 
-    CUBE_DEMO::Cube cube {};
+    MESHES::Cube cube {};
 
     Core::Core()
     : screen({80, 45}, DEFAULT_SETTINGS), renderer(screen) {

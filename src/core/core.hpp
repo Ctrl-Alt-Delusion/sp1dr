@@ -3,7 +3,7 @@
 #include "screen.hpp"
 #include "renderer.hpp"
 #include "camera.hpp"
-#include "../demo/cube_demo.hpp"
+#include "../meshes/cube.hpp"
 #include "input_handling.hpp"
 
 #include <algorithm>
@@ -12,7 +12,7 @@
 
 namespace CORE {
 
-    extern CUBE_DEMO::Cube cube;
+    extern MESHES::Cube cube;
     class Core {
     public:
         Core();          

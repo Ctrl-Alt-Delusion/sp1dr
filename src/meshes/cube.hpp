@@ -2,7 +2,9 @@
 
 #include "../math/math.hpp"
 
-namespace CUBE_DEMO {
+#include<vector>
+
+namespace MESHES {
     struct Cube {
         
         std::vector<MATH::Vec3<float>> vertices = {
