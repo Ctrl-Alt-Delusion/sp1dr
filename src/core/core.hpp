@@ -15,7 +15,7 @@ namespace CORE {
     extern MESHES::Cube cube;
     class Core {
     public:
-        Core();          
+        Core(pair_uint screen_size);          
         void game_loop();
         
         void game_logic();

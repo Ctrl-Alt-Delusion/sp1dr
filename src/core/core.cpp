@@ -4,17 +4,12 @@ namespace CORE {
 
     MESHES::Cube cube {};
 
-    Core::Core()
-    : screen({80, 45}, DEFAULT_SETTINGS), renderer(screen) {
+    Core::Core(pair_uint screen_size)
+    : screen(screen_size, DEFAULT_SETTINGS), renderer(screen) {
        
     }
 
     void Core::init() {
-        screen.set_pixel({21, 22}, 'X');
-        screen.set_pixel({22, 22}, 'X');
-        screen.set_pixel({23, 22}, 'X');
-        screen.set_pixel({24, 22}, 'X');
-        screen.set_pixel({25, 22}, 'X');
     }
 
 
