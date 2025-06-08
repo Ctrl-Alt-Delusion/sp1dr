@@ -3,7 +3,7 @@
 #include "screen.hpp"
 #include "renderer.hpp"
 #include "camera.hpp"
-#include "../meshes/cube.hpp"
+#include "../meshes/meshes.hpp"
 #include "input_handling.hpp"
 
 #include <algorithm>

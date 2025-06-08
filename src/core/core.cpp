@@ -25,7 +25,7 @@ namespace CORE {
                 screen.set_pixel({x, y}, ' ');
 
         // 2) For each vertex in cube, rotate by camera's inverse angles, translate, then project
-        for (auto v : cube.vertices) {
+        for (auto v : cube.getVertices()) {
             // rotate around Y by -yaw, then around X by -pitch
             auto temp = v.rotate_y(-camera.yaw)
                         .rotate_x(-camera.pitch);
@@ -48,7 +48,7 @@ namespace CORE {
         }
 
         // 3) Draw edges using those 2D points
-        for (const auto& [start, end] : cube.edges) {
+        for (const auto& [start, end] : cube.getEdges()) {
             draw_line(projected[start], projected[end], screen, '@');
         }
     }
