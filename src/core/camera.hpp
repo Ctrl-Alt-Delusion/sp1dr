@@ -20,14 +20,16 @@ namespace CORE {
     public:
         Camera(bool /*dummy*/ = true) {}
         virtual ~Camera() = default;
+
+        float focal_length = 5.0f; // focal length for projection
     };
 
     class OrbitCamera : public Camera {
     public:
         // Keep track of yaw (rotation around Y) and pitch (rotation around X)
-        float yaw   = 0.0f;   // left-right
-        float pitch = 0.0f;   // up-down
-        float dist  = 4.0f;   // camera distance from origin (you were using +4 before)
+        float yaw   = 0.0f; // left-right
+        float pitch = 0.0f; // up-down
+        float dist  = 4.0f; // camera distance from origin (you were using +4 before)
 
         // WASD/arrow keys drive these deltas in radians per keypress/frame
         float rot_angle_delta = 0.1f;

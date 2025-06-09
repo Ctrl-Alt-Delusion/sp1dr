@@ -48,6 +48,10 @@ namespace CORE {
         void set_change(bool c) {
             change = c;
         }
+
+        pair_uint get_screen_size() const {
+            return this->screen_size;
+        }
     private:
         pair_uint      screen_size     {};
         ScreenSettings settings        {};

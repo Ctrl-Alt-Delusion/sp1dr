@@ -4,7 +4,6 @@
 #include <vector>
 
 namespace MESHES {
-
     class Mesh {
     public:
         Mesh() = default;
@@ -43,4 +42,5 @@ namespace MESHES {
         }
     };
 
+    extern Cube static_cube_mesh;
 }
