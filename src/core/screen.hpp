@@ -37,7 +37,7 @@ namespace CORE {
             return this->screen_buffer;
         }
 
-        const bool get_change() const {
+        bool get_change() const {
             return change;
         }
 
