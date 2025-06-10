@@ -98,6 +98,52 @@ namespace CORE {
 
     }
 
+    void draw_triangle_with_depth(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, const MATH::Vec2<int>& p2,
+                                 float z0, float z1, float z2,
+                                 CORE::Screen& screen,
+                                 std::vector<std::vector<float>>& z_buffer,
+                                 char fill_char = '#') {
+        
+        // Find bounding box
+        int min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
+        int max_x = std::min((int)screen.get_size().x - 1, std::max({p0.x, p1.x, p2.x}));
+        int min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
+        int max_y = std::min((int)screen.get_size().y - 1, std::max({p0.y, p1.y, p2.y}));
+
+        // Rasterize each pixel in bounding box
+        for (int y = min_y; y <= max_y; ++y) {
+            for (int x = min_x; x <= max_x; ++x) {
+                MATH::Vec2<int> p = {x, y};
+                BarycentricCoords bary = barycentric(p, p0, p1, p2);
+                
+                if (bary.is_inside()) {
+                    // Interpolate depth (distance from camera)
+                    float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
+                    
+                    // Z-test: closer objects (smaller depth) win
+                    if (depth < z_buffer[y][x]) {
+                        z_buffer[y][x] = depth;
+                        screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, fill_char);
+                    }
+                }
+            }
+        }
+    }
+
+    MATH::Vec3<float> transform_to_camera_space(const MATH::Vec3<float>& world_pos, const OrbitCamera& camera) {
+        float cam_x = camera.dist * sin(camera.yaw) * cos(camera.pitch);
+        float cam_y = camera.dist * sin(camera.pitch);
+        float cam_z = camera.dist * cos(camera.yaw) * cos(camera.pitch);
+        
+        MATH::Vec3<float> camera_pos = {cam_x, cam_y, cam_z};
+        
+        MATH::Vec3<float> relative_pos = world_pos - camera_pos;
+        
+        auto cam_space = relative_pos.rotate_y(-camera.yaw).rotate_x(-camera.pitch);
+        
+        return cam_space;
+    }
+
     Core::Core(pair_uint screen_size)
     : screen(screen_size, DEFAULT_SETTINGS), renderer(screen) {
        
@@ -108,9 +154,20 @@ namespace CORE {
             start();
     }
 
-    void Core::game_logic(OrbitCamera& camera) {
+    char get_distance_shade(float distance) {
+        if (distance < 2.0f) return '@';
+        else if (distance < 4.0f) return '#';
+        else if (distance < 6.0f) return '*';
+        else if (distance < 8.0f) return '.';
+        else if (distance < 12.0f) return ':';
+        return ' ';
+    }
+
+   void Core::game_logic(OrbitCamera& camera) {
         const float ASPECT_RATIO = 1.8f;
         const float BASE_SCALE   = 15.0f;
+        const float NEAR_PLANE   = 0.1f;
+        const float FAR_PLANE    = 100.0f;
 
         auto screen_size_uint = screen.get_screen_size();
         MATH::Vec2<float> screen_size = {static_cast<float>(screen_size_uint.x), static_cast<float>(screen_size_uint.y)};
@@ -121,7 +178,10 @@ namespace CORE {
                 screen.set_pixel({x, y}, bg_char);
 
         screen.clear_screen();
-        std::vector<std::vector<float>> z_buffer(screen.get_size().y, std::vector<float>(screen.get_size().x, std::numeric_limits<float>::infinity()));
+        
+        // Initialize Z-buffer with far plane distance
+        std::vector<std::vector<float>> z_buffer(screen.get_size().y, 
+            std::vector<float>(screen.get_size().x, FAR_PLANE));
 
         for (const auto& entity : entity_manager.get_entities()) {
             auto mesh_entity = std::dynamic_pointer_cast<ENTITY::MeshEntity>(entity);
@@ -129,6 +189,7 @@ namespace CORE {
 
             std::vector<MATH::Vec2<int>> projected;
             std::vector<MATH::Vec3<float>> camera_space_vertices;
+            std::vector<float> depths; // Store actual depths for Z-testing
 
             auto* mesh = mesh_entity->get_mesh();
             auto position = mesh_entity->get_position();
@@ -136,14 +197,23 @@ namespace CORE {
 
             // Transform and project vertices
             for (auto v : mesh->getVertices()) {
-                // Apply scale and position
-                v = v.scale(scale) + position;
+                // Apply scale and position (world space)
+                MATH::Vec3<float> world_pos = v.scale(scale) + position;
 
-                // Camera space: rotate based on camera yaw/pitch
-                auto cam_v = v.rotate_y(-camera.yaw).rotate_x(-camera.pitch);
-                cam_v.z += camera.dist; // Push into view
-
+                // Transform to camera space
+                MATH::Vec3<float> cam_v = transform_to_camera_space(world_pos, camera);
+                
                 camera_space_vertices.push_back(cam_v);
+                
+                // Store the actual distance from camera for Z-testing
+                float depth = cam_v.magnitude();
+                depths.push_back(depth);
+
+                // Skip vertices behind the camera
+                if (cam_v.z >= -NEAR_PLANE) {
+                    projected.push_back({-1, -1}); // Invalid projection
+                    continue;
+                }
 
                 // Project to 2D
                 auto p = cam_v.project(camera.focal_length);
@@ -162,15 +232,21 @@ namespace CORE {
             
             // Draw faces (triangles)
             for (const auto& face : mesh->getFaces()) {
+                // Check if all vertices are valid (not behind camera)
+                if (projected[face.x].x < 0 || projected[face.y].x < 0 || projected[face.z].x < 0) {
+                    continue;
+                }
+
                 const auto& p0 = projected[face.x];
                 const auto& p1 = projected[face.y];
                 const auto& p2 = projected[face.z];
 
-                float z0 = camera_space_vertices[face.x].z;
-                float z1 = camera_space_vertices[face.y].z;
-                float z2 = camera_space_vertices[face.z].z;
+                // Use actual depths for Z-buffering
+                float z0 = depths[face.x];
+                float z1 = depths[face.y];
+                float z2 = depths[face.z];
 
-                // Simple backface culling (optional)
+                // Backface culling using camera space vertices
                 MATH::Vec3<float> v0_cam = camera_space_vertices[face.x];
                 MATH::Vec3<float> v1_cam = camera_space_vertices[face.y];
                 MATH::Vec3<float> v2_cam = camera_space_vertices[face.z];
@@ -179,25 +255,20 @@ namespace CORE {
                 MATH::Vec3<float> edge2 = v2_cam - v0_cam;
                 MATH::Vec3<float> normal = edge1.cross(edge2);
                 
-                // If normal points away from camera, skip this face
-                if (normal.z > 0) continue;
+                // View vector (from face to camera)
+                MATH::Vec3<float> face_center = (v0_cam + v1_cam + v2_cam) * (1.0f/3.0f);
+                MATH::Vec3<float> view_dir = -face_center.normalize();
+                
+                // Skip faces pointing away from camera
+                if (normal * view_dir <= 0) continue;
 
                 if (textured_entity) {
                     draw_textured_triangle(p0, p1, p2, z0, z1, z2, textured_entity.get(), screen, z_buffer);
                 } else {
-                    // Use depth-based shading for non-textured meshes
-                    float avg_z = (z0 + z1 + z2) / 3.0f;
-                    draw_triangle(p0, p1, p2, z0, z1, z2, screen, z_buffer, get_depth_shade(avg_z));
+                    // Use distance-based shading instead of Z-coordinate
+                    float avg_depth = (z0 + z1 + z2) / 3.0f;
+                    draw_triangle(p0, p1, p2, z0, z1, z2, screen, z_buffer, get_distance_shade(avg_depth));
                 }
-            }
-            for (const auto& [start, end] : mesh->getEdges()) {
-                const auto& p0 = projected[start];
-                const auto& p1 = projected[end];
-                
-                float z0 = camera_space_vertices[start].z;
-                float z1 = camera_space_vertices[end].z;
-                
-                draw_line_zbuffered(p0, p1, z0, z1, screen, z_buffer, '|');
             }
         }
     }

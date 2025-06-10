@@ -32,16 +32,6 @@ void start() {
 }
 
 void update() {
-    // You can add rotation or other animations here
-    static float rotation = 0.0f;
-    rotation += 0.02f;
-    
-    // Example: rotate the first cube
-    auto& entities = CORE::entity_manager.get_entities();
-    if (!entities.empty()) {
-        // This would require adding rotation to your entities
-        // For now, we'll keep it simple
-    }
 }
 
 int main() {
