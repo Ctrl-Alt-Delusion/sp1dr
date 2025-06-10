@@ -112,7 +112,7 @@ namespace MATH {
             };
         }
 
-        Vec2<T> project(float focal_length = 1.0f) {
+        Vec2<T> project(float focal_length = 1.0f) const{
             if (z == 0) return {x, y}; 
             return {
                 (focal_length * x) / z,
