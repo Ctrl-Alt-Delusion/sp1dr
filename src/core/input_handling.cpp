@@ -3,12 +3,30 @@
 namespace CORE {
     // ==== PLATFORM-SPECIFIC: Input Stuff ====
     #if defined(_WIN32)
+    #include <windows.h>
+    char pressed_key = 0;
+
     bool kbhit() {
-        return _kbhit();
+        char ch = 0;
+        for (char i = 'A'; i <= 'Z'; ++i) {
+            if (GetAsyncKeyState(i) & 0x8000) {
+                ch = tolower(i);
+                break;
+            }
+        }
+        
+        if (ch != 0) {
+            pressed_key = ch; // Store the pressed key
+            return 1;
+        }
+
+        return 0;
     }
     
     char getch() {
-        return _getch();
+        char ch = pressed_key;
+        pressed_key = 0; // Reset after reading
+        return ch;
     }
     #else
     void enable_raw_mode() {
