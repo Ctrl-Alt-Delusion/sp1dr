@@ -13,22 +13,22 @@ void start() {
     auto metal_texture = std::make_shared<TEXTURE::Texture2D>(4, 4, "$$$$$$$");
 
     // Create textured cubes
-    auto textured_cube1 = std::make_shared<ENTITY::TexturedMeshEntity>(cube, brick_texture);
-    textured_cube1->set_position({0.0f, 0.0f, 0.0f});
+    auto textured_cube1 = std::make_shared<ENTITY::MeshEntity>(cube);
+    textured_cube1->set_position({3.0f, 0.0f, -6.0f});
     entity_manager->add_entity(textured_cube1);
 
-    auto textured_cube2 = std::make_shared<ENTITY::TexturedMeshEntity>(cube, wood_texture);
-    textured_cube2->set_position({3.0f, 0.0f, 0.0f});
+    auto textured_cube2 = std::make_shared<ENTITY::MeshEntity>(cube);
+    textured_cube2->set_position({0.0f, 0.0f, -6.0f});
     entity_manager->add_entity(textured_cube2);
 
-    auto textured_cube3 = std::make_shared<ENTITY::TexturedMeshEntity>(cube, metal_texture);
-    textured_cube3->set_position({-3.0f, 0.0f, 0.0f});
-    entity_manager->add_entity(textured_cube3);
+    textured_cube1 = std::make_shared<ENTITY::MeshEntity>(cube);
+    textured_cube1->set_position({-3.0f, 0.0f, -6.0f});
+    entity_manager->add_entity(textured_cube1);
 
-    // Add a non-textured cube for comparison
-    auto plain_cube = std::make_shared<ENTITY::MeshEntity>(cube);
-    plain_cube->set_position({0.0f, 3.0f, 0.0f});
-    entity_manager->add_entity(plain_cube);
+    // // Add a non-textured cube for comparison
+    // auto plain_cube = std::make_shared<ENTITY::MeshEntity>(cube);
+    // plain_cube->set_position({0.0f, 2.0f, 0.0f});
+    // entity_manager->add_entity(plain_cube);
 }
 
 void update() {
@@ -37,7 +37,7 @@ void update() {
 int main() {
     std::cout << "Textured 3D Renderer Started!" << std::endl;
     
-    auto core = CORE::Core({120, 60}); // Larger screen for better texture visibility
+    auto core = CORE::Core({80, 45}); // Larger screen for better texture visibility
     core.start = start;
     core.update = update;
     core.init();

@@ -52,12 +52,26 @@ namespace MATH {
             return {x + other.x, y + other.y, z + other.z};
         }
 
+        inline Vec3 operator+=(const Vec3& other) {
+            x += other.x;
+            y += other.y;
+            z += other.z;
+            return *this;
+        }
+
         inline Vec3 operator*(const int o) const {
             return {x * o, y * o, z * o};
         }
 
         inline Vec3 operator-(const Vec3& other) const {
             return {x - other.x, y - other.y, z - other.z};
+        }
+
+        inline Vec3 operator-=(const Vec3& other) {
+            x -= other.x;
+            y -= other.y;
+            z -= other.z;
+            return *this;
         }
 
         inline T operator*(const Vec3& other) const {

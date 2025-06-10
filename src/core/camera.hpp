@@ -21,7 +21,7 @@ namespace CORE {
         Camera(bool /*dummy*/ = true) {}
         virtual ~Camera() = default;
 
-        float focal_length = 5.0f; // focal length for projection
+        float focal_length = 6.0f; // focal length for projection
     };
 
     class OrbitCamera : public Camera {
@@ -49,7 +49,25 @@ namespace CORE {
             view.z += dist;
             return view;
         }
-
     };
 
+    class FirstPersonCamera : public Camera {
+    public:
+        MATH::Vec3<float> position {0.0f, 0.0f, 0.0f}; // Default position at origin
+        float yaw = 0.0f; // left-right rotation
+        float pitch = 0.0f; // up-down rotation
+
+        std::vector<char> input_char {'a','d','w','s','z','x'};
+
+        FirstPersonCamera(float initYaw = 0.0f, float initPitch = 0.0f)
+            : yaw(initYaw), pitch(initPitch) {}
+
+        void handle_movement(Direction direction);
+
+        MATH::Vec3<float> world_to_view(const MATH::Vec3<float>& point) const {
+            auto view = point;
+            view = view.rotate_y(-yaw).rotate_x(-pitch);
+            return view;
+        }
+    };
 }

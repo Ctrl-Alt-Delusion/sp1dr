@@ -32,7 +32,7 @@ namespace CORE {
         void game_loop();
         
         void game_logic();
-        void game_logic(OrbitCamera& camera);
+        void game_logic(FirstPersonCamera& camera);
 
         void init();
 

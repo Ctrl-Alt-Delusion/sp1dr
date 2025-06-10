@@ -130,19 +130,59 @@ namespace CORE {
         }
     }
 
-    MATH::Vec3<float> transform_to_camera_space(const MATH::Vec3<float>& world_pos, const OrbitCamera& camera) {
-        float cam_x = camera.dist * sin(camera.yaw) * cos(camera.pitch);
-        float cam_y = camera.dist * sin(camera.pitch);
-        float cam_z = camera.dist * cos(camera.yaw) * cos(camera.pitch);
+    // MATH::Vec3<float> transform_to_camera_space(const MATH::Vec3<float>& world_pos, const OrbitCamera& camera) {
+    //     float cam_x = camera.dist * sin(camera.yaw) * cos(camera.pitch);
+    //     float cam_y = camera.dist * sin(camera.pitch);
+    //     float cam_z = camera.dist * cos(camera.yaw) * cos(camera.pitch);
         
-        MATH::Vec3<float> camera_pos = {cam_x, cam_y, cam_z};
+    //     MATH::Vec3<float> camera_pos = {cam_x, cam_y, cam_z};
         
-        MATH::Vec3<float> relative_pos = world_pos - camera_pos;
+    //     MATH::Vec3<float> relative_pos = world_pos - camera_pos;
         
-        auto cam_space = relative_pos.rotate_y(-camera.yaw).rotate_x(-camera.pitch);
+    //     auto cam_space = relative_pos.rotate_y(-camera.yaw).rotate_x(-camera.pitch);
         
-        return cam_space;
+    //     return cam_space;
+    // }
+    float dot(const MATH::Vec3<float>& a, const MATH::Vec3<float>& b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
     }
+
+
+    MATH::Vec3<float> transform_to_camera_space(const MATH::Vec3<float>& world_pos, const FirstPersonCamera& camera) {
+        
+        // Compute camera forward vector
+        float cosPitch = cosf(camera.pitch);
+        float sinPitch = sinf(camera.pitch);
+        float cosYaw = cosf(camera.yaw);
+        float sinYaw = sinf(camera.yaw);
+
+        MATH::Vec3<float> forward = {
+            cosPitch * sinYaw,
+            sinPitch,
+            cosPitch * cosYaw
+        };
+
+        // World up vector
+        MATH::Vec3<float> worldUp = {0.0f, 1.0f, 0.0f};
+
+        // Compute right = normalize(cross(worldUp, forward))
+        MATH::Vec3<float> right = worldUp.cross(forward).normalize();
+
+        // Compute up = cross(forward, right)
+        MATH::Vec3<float> up = forward.cross(right);
+
+        // Vector from camera to point in world space
+        MATH::Vec3<float> relative = world_pos - camera.position;
+
+        // Dot products to get camera space coordinates
+        float x = dot(relative, right);
+        float y = dot(relative, up);
+        float z = dot(relative, forward);
+
+        return {x, y, z};
+    }
+
+
 
     Core::Core(pair_uint screen_size)
     : screen(screen_size, DEFAULT_SETTINGS), renderer(screen) {
@@ -163,7 +203,7 @@ namespace CORE {
         return ' ';
     }
 
-   void Core::game_logic(OrbitCamera& camera) {
+   void Core::game_logic(FirstPersonCamera& camera) {
         const float ASPECT_RATIO = 1.8f;
         const float BASE_SCALE   = 15.0f;
         const float NEAR_PLANE   = 0.1f;
@@ -274,7 +314,7 @@ namespace CORE {
     }
 
     void Core::game_loop() {
-        OrbitCamera camera;
+        FirstPersonCamera camera;
 
         #if !defined(_WIN32)
             enable_raw_mode();
