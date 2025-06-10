@@ -17,6 +17,15 @@ namespace CORE {
     extern char bg_char;
     extern ENTITY::EntityManager entity_manager;
 
+
+    struct BarycentricCoords {
+        float u, v, w;
+        bool is_inside() const {
+            return u >= 0 && v >= 0 && w >= 0;
+        }
+    };
+
+
     class Core {
     public:
         Core(pair_uint screen_size);
