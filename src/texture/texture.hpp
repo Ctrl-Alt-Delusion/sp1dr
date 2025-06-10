@@ -17,8 +17,8 @@ public:
 
 class Texture2D : protected Texture {
 private:
-    size_t height;
     size_t width;
+    size_t height;
 
 public:
     Texture2D(size_t width, size_t height, std::string pattern);

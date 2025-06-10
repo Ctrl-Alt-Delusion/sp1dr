@@ -6,7 +6,7 @@ namespace TEXTURE {
         : texture_pattern(std::move(texture_pattern)) {}
 
     Texture2D::Texture2D(size_t width, size_t height, std::string pattern)
-        : width(width), height(height) ,Texture(std::move(pattern)) {}
+        : Texture(std::move(pattern)), width(width), height(height) {}
 
     void Texture2D::set_dimensions(size_t width, size_t height) {
         this->width = width;
