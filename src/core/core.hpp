@@ -13,6 +13,11 @@
 
 namespace CORE {
 
+using Vec2Int = MATH::Vec2<int>;
+using Vec2Float = MATH::Vec2<float>;
+using Vec3Float = MATH::Vec3<float>;
+using Vec4Int = MATH::Vec4<int>;
+
 // Configuration constants
 namespace Config {
     constexpr float ASPECT_RATIO = 1.8f;
@@ -20,7 +25,7 @@ namespace Config {
     constexpr float NEAR_PLANE = 0.1f;
     constexpr float FAR_PLANE = 100.0f;
     constexpr float MAX_VIEW_DISTANCE = 25.0f;
-    constexpr size_t DEFAULT_FRAMERATE = 60;
+    constexpr size_t DEFAULT_FRAME_RATE = 60;
 }
 
 // Forward declarations
@@ -37,36 +42,37 @@ struct BarycentricCoords {
 };
 
 // Calculate barycentric coordinates for point p in triangle (a, b, c)
-BarycentricCoords calculate_barycentric(const MATH::Vec2<int>& p, 
-                                       const MATH::Vec2<int>& a, 
-                                       const MATH::Vec2<int>& b, 
-                                       const MATH::Vec2<int>& c) noexcept;
+BarycentricCoords calculate_barycentric(const Vec2Int& p, 
+                                        const Vec2Int& a, 
+                                        const Vec2Int& b, 
+                                        const Vec2Int& c) noexcept;
 
 // Distance-based shading functions
 char get_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
 char get_enhanced_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
 
-// Triangle rasterization functions
-void rasterize_textured_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, const MATH::Vec2<int>& p2,
-                                float z0, float z1, float z2,
-                                const ENTITY::TexturedMeshEntity* textured_entity,
-                                Screen& screen,
-                                std::vector<std::vector<float>>& z_buffer);
+Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2, Screen& screen) noexcept;
 
-void rasterize_shaded_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, const MATH::Vec2<int>& p2,
-                              float z0, float z1, float z2,
-                              Screen& screen,
-                              std::vector<std::vector<float>>& z_buffer,
-                              char fill_char = '#');
+// Triangle rasterization functions
+void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
+                                 float z0, float z1, float z2,
+                                 const ENTITY::TexturedMeshEntity* textured_entity,
+                                 Screen& screen,
+                                 std::vector<std::vector<float>>& z_buffer);
+
+void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
+                               float z0, float z1, float z2,
+                               Screen& screen,
+                               std::vector<std::vector<float>>& z_buffer);
 
 // Camera space transformation
-MATH::Vec3<float> world_to_camera_space(const MATH::Vec3<float>& world_pos, 
-                                       const FirstPersonCamera& camera) noexcept;
+Vec3Float world_to_camera_space(const Vec3Float& world_pos, 
+                                const FirstPersonCamera& camera) noexcept;
 
 // Projection utilities
-MATH::Vec2<int> project_to_screen(const MATH::Vec3<float>& camera_pos, 
-                                 float focal_length,
-                                 const MATH::Vec2<float>& screen_size) noexcept;
+Vec2Int project_to_screen(const Vec3Float& camera_pos, 
+                          float focal_length,
+                          const Vec2Float& screen_size) noexcept;
 
 // Core engine class
 class Core {
@@ -83,23 +89,23 @@ public:
     void initialize();
     void run_game_loop();
     
-    void set_target_framerate(size_t rate) noexcept { target_framerate_ = rate; }
+    void set_target_framerate(size_t rate) noexcept { _target_frame_rate = rate; }
     
     // Game loop callbacks
-    std::function<void()> on_start = nullptr;
-    std::function<void()> on_update = nullptr;
+    std::function<void()> on_start       = nullptr;
+    std::function<void()> on_update      = nullptr;
     std::function<void()> on_late_update = nullptr;
 
 private:
     void update_game_logic(FirstPersonCamera& camera);
     void process_input(FirstPersonCamera& camera);
     bool should_cull_entity(const std::shared_ptr<ENTITY::MeshEntity>& entity, 
-                           const FirstPersonCamera& camera) const noexcept;
+                            const FirstPersonCamera& camera) const noexcept;
     
-    size_t target_framerate_ = Config::DEFAULT_FRAMERATE;
-    Screen screen_;
-    Renderer renderer_;
-    bool is_running_ = true;
+    size_t _target_frame_rate = Config::DEFAULT_FRAME_RATE;
+    Screen _screen;
+    Renderer _renderer;
+    bool _is_running = true;
 };
 
 // Global entity manager (consider dependency injection in the future)

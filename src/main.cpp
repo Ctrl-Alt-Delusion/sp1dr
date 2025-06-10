@@ -16,19 +16,19 @@ void initialize_scene() {
     plain_cube1->set_scale({0.5f, 0.5f, 0.5f});
     entity_manager.add_entity(plain_cube1);
     
-    auto plain_cube2 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
-    plain_cube2->set_position({-2.0f, 0.0f, -4.0f});
-    plain_cube2->set_scale({2.0f, 0.5f, 2.0f});
-    entity_manager.add_entity(plain_cube2);
+    // auto plain_cube2 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
+    // plain_cube2->set_position({-2.0f, 0.0f, -4.0f});
+    // plain_cube2->set_scale({2.0f, 0.5f, 2.0f});
+    // entity_manager.add_entity(plain_cube2);
 
-    auto plain_cube3 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
-    plain_cube1->set_position({0.0f, 0.0f, -1.0f});
-    plain_cube1->set_scale({0.5f, 0.5f, 0.5f});
-    entity_manager.add_entity(plain_cube3);
+    // auto plain_cube3 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
+    // plain_cube1->set_position({0.0f, 0.0f, -1.0f});
+    // plain_cube1->set_scale({0.5f, 0.5f, 0.5f});
+    // entity_manager.add_entity(plain_cube3);
     
     auto plain_cube4 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
-    plain_cube2->set_position({-6.0f, 0.0f, -12.0f});
-    plain_cube2->set_scale({2.0f, 0.5f, 2.0f});
+    plain_cube4->set_position({-6.0f, 0.0f, -12.0f});
+    plain_cube4->set_scale({2.0f, 0.5f, 2.0f});
     entity_manager.add_entity(plain_cube4);
     
     std::cout << "Scene initialized with " << entity_manager.get_entities().size() << " entities.\n";

@@ -10,13 +10,13 @@ namespace CORE {
 ENTITY::EntityManager g_entity_manager{};
 
 // Barycentric coordinate calculation
-BarycentricCoords calculate_barycentric(const MATH::Vec2<int>& p, 
-                                       const MATH::Vec2<int>& a, 
-                                       const MATH::Vec2<int>& b, 
-                                       const MATH::Vec2<int>& c) noexcept {
-    const MATH::Vec2<int> v0 = {c.x - a.x, c.y - a.y};
-    const MATH::Vec2<int> v1 = {b.x - a.x, b.y - a.y};
-    const MATH::Vec2<int> v2 = {p.x - a.x, p.y - a.y};
+BarycentricCoords calculate_barycentric(const Vec2Int& p, 
+                                        const Vec2Int& a, 
+                                        const Vec2Int& b, 
+                                        const Vec2Int& c) noexcept {
+    const Vec2Int v0 = {c.x - a.x, c.y - a.y};
+    const Vec2Int v1 = {b.x - a.x, b.y - a.y};
+    const Vec2Int v2 = {p.x - a.x, p.y - a.y};
 
     const int dot00 = v0.x * v0.x + v0.y * v0.y;
     const int dot01 = v0.x * v1.x + v0.y * v1.y;
@@ -71,13 +71,13 @@ char get_enhanced_distance_shade(float distance, float max_distance) noexcept {
 }
 
 // Utility function for dot product
-constexpr float dot_product(const MATH::Vec3<float>& a, const MATH::Vec3<float>& b) noexcept {
+constexpr float dot_product(const Vec3Float& a, const Vec3Float& b) noexcept {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 // Camera space transformation
-MATH::Vec3<float> world_to_camera_space(const MATH::Vec3<float>& world_pos, 
-                                       const FirstPersonCamera& camera) noexcept {
+Vec3Float world_to_camera_space(const Vec3Float& world_pos, 
+                                const FirstPersonCamera& camera) noexcept {
     // Precompute trigonometric values
     const float cos_pitch = std::cos(camera.pitch);
     const float sin_pitch = std::sin(camera.pitch);
@@ -85,18 +85,18 @@ MATH::Vec3<float> world_to_camera_space(const MATH::Vec3<float>& world_pos,
     const float sin_yaw = std::sin(camera.yaw);
 
     // Camera basis vectors
-    const MATH::Vec3<float> forward = {
+    const Vec3Float forward = {
         cos_pitch * sin_yaw,
         sin_pitch,
         cos_pitch * cos_yaw
     };
 
-    const MATH::Vec3<float> world_up = {0.0f, 1.0f, 0.0f};
-    const MATH::Vec3<float> right = world_up.cross(forward).normalize();
-    const MATH::Vec3<float> up = forward.cross(right);
+    const Vec3Float world_up = {0.0f, 1.0f, 0.0f};
+    const Vec3Float right = world_up.cross(forward).normalize();
+    const Vec3Float up = forward.cross(right);
 
     // Transform to camera space
-    const MATH::Vec3<float> relative = world_pos - camera.position;
+    const Vec3Float relative = world_pos - camera.position;
     
     return {
         dot_product(relative, right),
@@ -106,9 +106,9 @@ MATH::Vec3<float> world_to_camera_space(const MATH::Vec3<float>& world_pos,
 }
 
 // Screen projection
-MATH::Vec2<int> project_to_screen(const MATH::Vec3<float>& camera_pos, 
-                                 float focal_length,
-                                 const MATH::Vec2<float>& screen_size) noexcept {
+Vec2Int project_to_screen(const Vec3Float& camera_pos, 
+                          float focal_length,
+                          const Vec2Float& screen_size) noexcept {
     if (camera_pos.z >= -Config::NEAR_PLANE) {
         return {-1, -1}; // Behind camera
     }
@@ -123,36 +123,47 @@ MATH::Vec2<int> project_to_screen(const MATH::Vec3<float>& camera_pos,
     };
 }
 
+Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2, Screen& screen) noexcept {
+    const auto screen_size = screen.get_size();
+    const int min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
+    const int max_x = std::min(static_cast<int>(screen_size.x) - 1, std::max({p0.x, p1.x, p2.x}));
+    const int min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
+    const int max_y = std::min(static_cast<int>(screen_size.y) - 1, std::max({p0.y, p1.y, p2.y}));
+
+    return {min_x, min_y, max_x, max_y};
+}
+
 // Triangle rasterization with texture
-void rasterize_textured_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, const MATH::Vec2<int>& p2,
+void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                 float z0, float z1, float z2,
                                 const ENTITY::TexturedMeshEntity* textured_entity,
                                 Screen& screen,
                                 std::vector<std::vector<float>>& z_buffer) {
-    
-    // Bounding box calculation
-    const int min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
-    const int max_x = std::min(static_cast<int>(screen.get_size().x) - 1, std::max({p0.x, p1.x, p2.x}));
-    const int min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
-    const int max_y = std::min(static_cast<int>(screen.get_size().y) - 1, std::max({p0.y, p1.y, p2.y}));
+    const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
 
     // Rasterize pixels within bounding box
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
-            const MATH::Vec2<int> pixel = {x, y};
+            const Vec2Int pixel = {x, y};
             const BarycentricCoords bary = calculate_barycentric(pixel, p0, p1, p2);
             
-            if (bary.is_inside()) {
-                const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
+            if (!bary.is_inside()) {
+                continue; // Skip pixels outside the triangle
+            }
+
+            const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
+            if (depth > Config::MAX_VIEW_DISTANCE) {
+                continue;
+            }
+            if (depth < z_buffer[y][x]) {
+                z_buffer[y][x] = depth;
                 
-                if (depth < z_buffer[y][x]) {
-                    z_buffer[y][x] = depth;
-                    
-                    // UV mapping using barycentric coordinates
-                    const float u = bary.v;
-                    const float v = bary.w;
-                    
-                    const char tex_char = textured_entity->get_texture_char(u, v);
+                // UV mapping using barycentric coordinates
+                const float u = bary.v;
+                const float v = bary.w;
+
+                const char tex_char = textured_entity->get_texture_char(u, v);
+                if (tex_char != ' ') {
                     screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, tex_char);
                 }
             }
@@ -161,33 +172,30 @@ void rasterize_textured_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int
 }
 
 // Triangle rasterization with distance-based shading
-void rasterize_shaded_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int>& p1, const MATH::Vec2<int>& p2,
+void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                               float z0, float z1, float z2,
                               Screen& screen,
-                              std::vector<std::vector<float>>& z_buffer,
-                              char fill_char) {
-    
-    const int min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
-    const int max_x = std::min(static_cast<int>(screen.get_size().x) - 1, std::max({p0.x, p1.x, p2.x}));
-    const int min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
-    const int max_y = std::min(static_cast<int>(screen.get_size().y) - 1, std::max({p0.y, p1.y, p2.y}));
+                              std::vector<std::vector<float>>& z_buffer) {
+    const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
 
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
-            const MATH::Vec2<int> pixel = {x, y};
+            const Vec2Int pixel = {x, y};
             const BarycentricCoords bary = calculate_barycentric(pixel, p0, p1, p2);
             
-            if (bary.is_inside()) {
-                const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
-                
-                if (depth > Config::MAX_VIEW_DISTANCE) continue;
-                
-                if (depth < z_buffer[y][x]) {
-                    z_buffer[y][x] = depth;
-                    const char shade_char = get_distance_shade(depth);
-                    if (shade_char != ' ') {
-                        screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, shade_char);
-                    }
+            if (!bary.is_inside()) {
+                continue;
+            }
+
+            const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
+            if (depth > Config::MAX_VIEW_DISTANCE) {
+                continue;
+            }
+            if (depth < z_buffer[y][x]) {
+                z_buffer[y][x] = depth;
+                const char shade_char = get_distance_shade(depth);
+                if (shade_char != ' ') {
+                    screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, shade_char);
                 }
             }
         }
@@ -196,7 +204,7 @@ void rasterize_shaded_triangle(const MATH::Vec2<int>& p0, const MATH::Vec2<int>&
 
 // Core class implementation
 Core::Core(pair_uint screen_size) 
-    : screen_(screen_size, DEFAULT_SETTINGS), renderer_(screen_) {
+    : _screen(screen_size, DEFAULT_SETTINGS), _renderer(_screen) {
 }
 
 void Core::initialize() {
@@ -206,11 +214,11 @@ void Core::initialize() {
 }
 
 bool Core::should_cull_entity(const std::shared_ptr<ENTITY::MeshEntity>& entity, 
-                             const FirstPersonCamera& camera) const noexcept {
+                              const FirstPersonCamera& camera) const noexcept {
     const auto position = entity->get_position();
     const auto scale = entity->get_scale();
     
-    const MATH::Vec3<float> entity_to_camera = position - camera.position;
+    const Vec3Float entity_to_camera = position - camera.position;
     const float entity_distance = entity_to_camera.magnitude();
     
     // Frustum culling based on distance
@@ -219,22 +227,21 @@ bool Core::should_cull_entity(const std::shared_ptr<ENTITY::MeshEntity>& entity,
 }
 
 void Core::update_game_logic(FirstPersonCamera& camera) {
-    const auto screen_size_uint = screen_.get_screen_size();
-    const MATH::Vec2<float> screen_size = {
+    const auto screen_size_uint = _screen.get_size();
+    const Vec2Float screen_size = {
         static_cast<float>(screen_size_uint.x), 
         static_cast<float>(screen_size_uint.y)
     };
 
     // Clear screen buffer
-    for (size_t y = 0; y < screen_.get_size().y; ++y) {
-        for (size_t x = 0; x < screen_.get_size().x; ++x) {
-            screen_.set_pixel({x, y}, ' ');
-        }
+    for (size_t y = 0; y < screen_size_uint.y * screen_size_uint.x; y++) {
+        auto x = y % screen_size_uint.x;
+        _screen.set_pixel({x, y / screen_size_uint.x}, ' ');
     }
 
     // Initialize Z-buffer
-    std::vector<std::vector<float>> z_buffer(screen_.get_size().y, 
-        std::vector<float>(screen_.get_size().x, Config::FAR_PLANE));
+    std::vector<std::vector<float>> z_buffer(screen_size.y, 
+        std::vector<float>(screen_size.x, Config::FAR_PLANE));
 
     // Render all entities
     for (const auto& entity : g_entity_manager.get_entities()) {
@@ -244,22 +251,22 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
         }
 
         // Transform and project vertices
-        std::vector<MATH::Vec2<int>> projected_vertices;
-        std::vector<MATH::Vec3<float>> camera_vertices;
+        std::vector<Vec2Int> projected_vertices;
+        std::vector<Vec3Float> camera_vertices;
         std::vector<float> depths;
 
-        const auto* mesh = mesh_entity->get_mesh();
-        const auto position = mesh_entity->get_position();
-        const auto scale = mesh_entity->get_scale();
+        const auto* mesh     = mesh_entity->get_mesh();
+        const auto  position = mesh_entity->get_position();
+        const auto  scale    = mesh_entity->get_scale();
 
         for (const auto& vertex : mesh->getVertices()) {
-            const MATH::Vec3<float> world_pos = vertex.scale(scale) + position;
-            const MATH::Vec3<float> cam_vertex = world_to_camera_space(world_pos, camera);
+            const Vec3Float world_pos  = vertex.scale(scale) + position;
+            const Vec3Float cam_vertex = world_to_camera_space(world_pos, camera);
             
             camera_vertices.push_back(cam_vertex);
             depths.push_back(cam_vertex.magnitude());
             
-            const MATH::Vec2<int> projected = project_to_screen(cam_vertex, camera.focal_length, screen_size);
+            const Vec2Int projected = project_to_screen(cam_vertex, camera.focal_length, screen_size);
             projected_vertices.push_back(projected);
         }
 
@@ -289,38 +296,42 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             }
 
             // Backface culling
-            const MATH::Vec3<float>& v0_cam = camera_vertices[face.x];
-            const MATH::Vec3<float>& v1_cam = camera_vertices[face.y];
-            const MATH::Vec3<float>& v2_cam = camera_vertices[face.z];
+            const Vec3Float& v0_cam = camera_vertices[face.x];
+            const Vec3Float& v1_cam = camera_vertices[face.y];
+            const Vec3Float& v2_cam = camera_vertices[face.z];
             
-            const MATH::Vec3<float> edge1 = v1_cam - v0_cam;
-            const MATH::Vec3<float> edge2 = v2_cam - v0_cam;
-            const MATH::Vec3<float> normal = edge1.cross(edge2);
+            const Vec3Float edge1 = v1_cam - v0_cam;
+            const Vec3Float edge2 = v2_cam - v0_cam;
+            const Vec3Float normal = edge1.cross(edge2);
             
-            const MATH::Vec3<float> face_center = (v0_cam + v1_cam + v2_cam) * (1.0f/3.0f);
-            const MATH::Vec3<float> view_dir = -face_center.normalize();
+            const Vec3Float face_center = (v0_cam + v1_cam + v2_cam) * (1.0f/3.0f);
+            const Vec3Float view_dir = -face_center.normalize();
             
-            if (dot_product(normal, view_dir) <= 0) continue;
+            if (dot_product(normal, view_dir) <= 0) {
+                continue;
+            }
 
             // Render triangle
             if (textured_entity) {
-                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, textured_entity.get(), screen_, z_buffer);
+                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, textured_entity.get(), _screen, z_buffer);
             } else {
-                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, screen_, z_buffer);
+                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, _screen, z_buffer);
             }
         }
     }
 }
 
 void Core::process_input(FirstPersonCamera& camera) {
-    if (!kbhit()) return;
-    
-    const char input = getch();
-    if (input == 'q') {
-        is_running_ = false;
+    if (!is_any_key_pressed()) {
+        return;
+    }
+
+    if (is_key_pressed(KeyCode::KEY_ESCAPE)) {
+        _is_running = false;
         return;
     }
     
+    const char input = get_pressed_key();
     const auto& input_chars = camera.input_char;
     const auto it = std::find(input_chars.begin(), input_chars.end(), input);
     if (it != input_chars.end()) {
@@ -336,9 +347,9 @@ void Core::run_game_loop() {
         enable_raw_mode();
     #endif
     
-    const auto frame_duration = std::chrono::milliseconds(1000 / target_framerate_);
+    const auto frame_duration = std::chrono::milliseconds(1000 / _target_frame_rate);
     
-    while (is_running_) {
+    while (_is_running) {
         const auto frame_start = std::chrono::steady_clock::now();
         
         // Update game logic
@@ -350,8 +361,8 @@ void Core::run_game_loop() {
         process_input(camera);
         
         // Render
-        screen_.clear_screen();
-        renderer_.render();
+        _screen.clear_screen();
+        _renderer.render();
         
         // Late update
         if (on_late_update) {

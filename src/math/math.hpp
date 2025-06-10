@@ -129,5 +129,21 @@ namespace MATH {
         }
     };
 
+    template<typename T>
+    struct Vec4 {
+        T x, y, z, w;
+
+        Vec4<T> operator+(const Vec4<T>& other) const {
+            return {x + other.x, y + other.y, z + other.z, w + other.w};
+        }
+
+        Vec4<T> operator*(const T scalar) const {
+            return {x * scalar, y * scalar, z * scalar, w * scalar};
+        }
+
+        Vec4<T> operator-(const Vec4<T>& other) const {
+            return {x - other.x, y - other.y, z - other.z, w - other.w};
+        }
+    };
 }
 
