@@ -5,6 +5,7 @@
 #include "../texture/texture.hpp"
 
 #include <iostream>
+#include <memory>
 
 namespace ENTITY {
 
