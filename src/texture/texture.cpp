@@ -29,5 +29,4 @@ namespace TEXTURE {
 
         return texture;
     }
-
 }

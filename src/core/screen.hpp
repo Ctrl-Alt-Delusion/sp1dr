@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/math.hpp"
+#include "../color/color.hpp"
 
 #include <iostream>
 #include <vector>
@@ -32,9 +33,14 @@ namespace CORE {
 
         void clear_screen();
         bool set_pixel(pair_uint position, char rune);
+        bool set_pixel_color(pair_uint position, const COLOR::RGBColor& color);
 
         const std::vector<std::vector<char>>& get_screen_buffer() const {
             return this->screen_buffer;
+        }
+
+        const std::vector<std::vector<COLOR::RGBColor>>& get_color_buffer() const {
+            return this->color_buffer;
         }
 
         bool get_change() const {
@@ -53,7 +59,7 @@ namespace CORE {
         ScreenSettings settings        {};
 
         std::vector<std::vector<char>> screen_buffer {};
-
+        std::vector<std::vector<COLOR::RGBColor>> color_buffer  {};
         bool change {};
     };
 

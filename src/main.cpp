@@ -9,10 +9,15 @@ void initialize_scene() {
     auto* cube_mesh = &MESHES::static_cube_mesh;
     
     // Create different texture patterns
-    auto brick_texture = std::make_shared<TEXTURE::Texture2D>(8, 8, "####@@@@");
+    auto brick_colors = std::vector<COLOR::RGBColor>{
+        {255, 0, 0}, {128, 0, 0}, {200, 100, 100}, {150, 50, 50}
+    };
+    auto brick_texture = std::make_shared<TEXTURE::ColoredTexture2D>(8, 8, "#", std::vector<COLOR::RGBColor>{
+        {255, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}
+    });
     auto wood_texture = std::make_shared<TEXTURE::Texture2D>(6, 6, "|||---");
     auto metal_texture = std::make_shared<TEXTURE::Texture2D>(4, 4, "$$$$####");
-    
+
     // --- Simple maze generation ---
     const int maze_width = 15;
     const int maze_height = 15;
@@ -53,7 +58,12 @@ void initialize_scene() {
             }
         }
     }
-    
+
+    auto plain_cube1 = std::make_shared<ENTITY::TexturedMeshEntity>(cube_mesh, brick_texture);
+    plain_cube1->set_position({0.0f, 0.0f, -4.0f});
+    plain_cube1->set_scale({0.5f, 0.5f, 0.5f});
+    entity_manager.add_entity(plain_cube1);
+
     std::cout << "Scene initialized with " << entity_manager.get_entities().size() << " entities.\n";
 }
 

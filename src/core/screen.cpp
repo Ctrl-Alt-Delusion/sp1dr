@@ -13,6 +13,11 @@ namespace CORE {
             this->screen_size.y,
             std::vector<char>(this->screen_size.x, ' ') 
         );
+
+        this->color_buffer = std::vector<std::vector<COLOR::RGBColor>>(
+            this->screen_size.y,
+            std::vector<COLOR::RGBColor>(this->screen_size.x, COLOR::RGBColor{0, 0, 0})
+        );
     }
 
     // Paint an individual pixel if valid position
@@ -23,6 +28,18 @@ namespace CORE {
         }
         this->screen_buffer[pos.y][pos.x] = rune;
         change = 1;
+        return true; 
+    }
+
+    bool Screen::set_pixel_color(pair_uint pos, const COLOR::RGBColor& color) {
+        if (pos.x >= this->screen_size.x || pos.y >= this->screen_size.y) {
+            std::cerr << "invalid position coordinates entered | x : " << pos.x << " | y : " << pos.y << std::endl;
+            return false;
+        }
+        if (color_buffer.size() <= pos.y) {
+            color_buffer.resize(this->screen_size.y, std::vector<COLOR::RGBColor>(this->screen_size.x));
+        }
+        this->color_buffer[pos.y][pos.x] = color;
         return true; 
     }
 

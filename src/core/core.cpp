@@ -218,6 +218,17 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
                 if (tex_char != ' ' && tex_char != '\0') {
                     screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, tex_char);
                 }
+
+                std::shared_ptr<TEXTURE::Texture2D> texture2d = textured_entity->get_texture();
+                if (texture2d) {
+                    auto colored_texture = std::dynamic_pointer_cast<TEXTURE::ColoredTexture2D>(texture2d);
+                    if (colored_texture) {
+                        auto color_pattern = colored_texture->get_color_pattern();
+                        const size_t color_index = static_cast<size_t>(u * (color_pattern.size() - 1));
+                        const COLOR::RGBColor color = color_pattern[color_index];
+                        screen.set_pixel_color({static_cast<size_t>(x), static_cast<size_t>(y)}, color);
+                    }
+                }
             }
         }
     }
@@ -294,6 +305,7 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
     for (size_t y = 0; y < screen_size_uint.y; ++y) {
         for (size_t x = 0; x < screen_size_uint.x; ++x) {
             _screen.set_pixel({x, y}, ' ');
+            _screen.set_pixel_color({x, y}, COLOR::RGBColor{0, 0, 0});
         }
     }
 
