@@ -24,7 +24,7 @@ namespace Config {
     constexpr float BASE_SCALE = 15.0f;
     constexpr float NEAR_PLANE = 0.1f;
     constexpr float FAR_PLANE = 100.0f;
-    constexpr float MAX_VIEW_DISTANCE = 5.0f;
+    constexpr float MAX_VIEW_DISTANCE = 15.0f;
     constexpr size_t DEFAULT_FRAME_RATE = 60;
 }
 
@@ -107,6 +107,44 @@ private:
     Renderer _renderer;
     bool _is_running = true;
 };
+
+class ZBuffer {
+private:
+    std::vector<std::vector<float>> buffer;
+    size_t width, height;
+
+public:
+    ZBuffer(size_t w, size_t h) : width(w), height(h) {
+        buffer.resize(height, std::vector<float>(width, Config::FAR_PLANE));
+    }
+
+    void clear() {
+        for (auto& row : buffer) {
+            std::fill(row.begin(), row.end(), Config::FAR_PLANE);
+        }
+    }
+
+    bool test_and_set(size_t x, size_t y, float depth) {
+        if (x >= width || y >= height) return false;
+        if (depth < buffer[y][x]) {
+            buffer[y][x] = depth;
+            return true;
+        }
+        return false;
+    }
+
+    float get_depth(size_t x, size_t y) const {
+        if (x >= width || y >= height) return Config::FAR_PLANE;
+        return buffer[y][x];
+    }
+
+    void resize(size_t w, size_t h) {
+        width = w;
+        height = h;
+        buffer.resize(height, std::vector<float>(width, Config::FAR_PLANE));
+    }
+};
+
 
 // Global entity manager (consider dependency injection in the future)
 extern ENTITY::EntityManager g_entity_manager;

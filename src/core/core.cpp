@@ -133,37 +133,55 @@ Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
     return {min_x, min_y, max_x, max_y};
 }
 
-// Triangle rasterization with texture
 void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
-                                float z0, float z1, float z2,
-                                const ENTITY::TexturedMeshEntity* textured_entity,
-                                Screen& screen,
-                                std::vector<std::vector<float>>& z_buffer) {
+                                        float z0, float z1, float z2,
+                                        const ENTITY::TexturedMeshEntity* textured_entity,
+                                        Screen& screen,
+                                        ZBuffer& z_buffer) {
     const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
+
+    // Precompute triangle area for barycentric calculation optimization
+    const float triangle_area = static_cast<float>(
+        (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y)
+    );
+    
+    if (std::abs(triangle_area) < 1e-6f) {
+        return; // Degenerate triangle
+    }
+
+    const float inv_area = 1.0f / triangle_area;
 
     // Rasterize pixels within bounding box
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
             const Vec2Int pixel = {x, y};
+            
+            // Calculate barycentric coordinates
             const BarycentricCoords bary = calculate_barycentric(pixel, p0, p1, p2);
             
             if (!bary.is_inside()) {
-                continue; // Skip pixels outside the triangle
-            }
-
-            const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
-            if (depth > Config::MAX_VIEW_DISTANCE) {
                 continue;
             }
-            if (depth < z_buffer[y][x]) {
-                z_buffer[y][x] = depth;
-                
+
+            // Interpolate depth using barycentric coordinates
+            const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
+            
+            // Early depth test
+            if (depth > Config::MAX_VIEW_DISTANCE || depth < Config::NEAR_PLANE) {
+                continue;
+            }
+
+            // Z-buffer test and update
+            if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
                 // UV mapping using barycentric coordinates
-                const float u = bary.v;
-                const float v = bary.w;
+                // Note: You might need to adjust this based on your UV coordinate system
+                const float u = bary.v; // These mappings might need adjustment
+                const float v = bary.w; // based on your specific UV layout
 
                 const char tex_char = textured_entity->get_texture_char(u, v);
-                if (tex_char != ' ') {
+                
+                // Only render non-transparent pixels
+                if (tex_char != ' ' && tex_char != '\0') {
                     screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, tex_char);
                 }
             }
@@ -171,11 +189,11 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
     }
 }
 
-// Triangle rasterization with distance-based shading
+// 3. Enhanced shaded triangle rasterization for consistency
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
-                              float z0, float z1, float z2,
-                              Screen& screen,
-                              std::vector<std::vector<float>>& z_buffer) {
+                                      float z0, float z1, float z2,
+                                      Screen& screen,
+                                      ZBuffer& z_buffer) {
     const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
 
     for (int y = min_y; y <= max_y; ++y) {
@@ -188,11 +206,12 @@ void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
             }
 
             const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
-            if (depth > Config::MAX_VIEW_DISTANCE) {
+            
+            if (depth > Config::MAX_VIEW_DISTANCE || depth < Config::NEAR_PLANE) {
                 continue;
             }
-            if (depth < z_buffer[y][x]) {
-                z_buffer[y][x] = depth;
+
+            if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
                 const char shade_char = get_distance_shade(depth);
                 if (shade_char != ' ') {
                     screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, shade_char);
@@ -234,21 +253,44 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
     };
 
     // Clear screen buffer
-    for (size_t y = 0; y < screen_size_uint.y * screen_size_uint.x; y++) {
-        auto x = y % screen_size_uint.x;
-        _screen.set_pixel({x, y / screen_size_uint.x}, ' ');
+    for (size_t y = 0; y < screen_size_uint.y; ++y) {
+        for (size_t x = 0; x < screen_size_uint.x; ++x) {
+            _screen.set_pixel({x, y}, ' ');
+        }
     }
 
-    // Initialize Z-buffer
-    std::vector<std::vector<float>> z_buffer(screen_size.y, 
-        std::vector<float>(screen_size.x, Config::FAR_PLANE));
+    // Initialize Z-buffer with improved class
+    ZBuffer z_buffer(screen_size_uint.x, screen_size_uint.y);
 
-    // Render all entities
+    // Collect and sort entities by distance for better rendering order
+    struct EntityWithDistance {
+        std::shared_ptr<ENTITY::MeshEntity> entity;
+        float distance;
+    };
+
+    std::vector<EntityWithDistance> sorted_entities;
+    
     for (const auto& entity : g_entity_manager.get_entities()) {
         auto mesh_entity = std::dynamic_pointer_cast<ENTITY::MeshEntity>(entity);
         if (!mesh_entity || should_cull_entity(mesh_entity, camera)) {
             continue;
         }
+
+        const Vec3Float entity_to_camera = mesh_entity->get_position() - camera.position;
+        const float distance = entity_to_camera.magnitude();
+        
+        sorted_entities.push_back({mesh_entity, distance});
+    }
+
+    // Sort entities back-to-front for better transparency handling
+    std::sort(sorted_entities.begin(), sorted_entities.end(),
+              [](const EntityWithDistance& a, const EntityWithDistance& b) {
+                  return a.distance > b.distance;
+              });
+
+    // Render all entities
+    for (const auto& entity_data : sorted_entities) {
+        const auto& mesh_entity = entity_data.entity;
 
         // Transform and project vertices
         std::vector<Vec2Int> projected_vertices;
@@ -270,7 +312,7 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             projected_vertices.push_back(projected);
         }
 
-        const auto textured_entity = std::dynamic_pointer_cast<ENTITY::TexturedMeshEntity>(entity);
+        const auto textured_entity = std::dynamic_pointer_cast<ENTITY::TexturedMeshEntity>(mesh_entity);
         
         // Render faces
         for (const auto& face : mesh->getFaces()) {
@@ -308,14 +350,16 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             const Vec3Float view_dir = -face_center.normalize();
             
             if (dot_product(normal, view_dir) <= 0) {
-                continue;
+                continue; // Skip backfacing triangles
             }
 
-            // Render triangle
+            // Render triangle with improved z-buffering
             if (textured_entity) {
-                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, textured_entity.get(), _screen, z_buffer);
+                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, 
+                                                   textured_entity.get(), _screen, z_buffer);
             } else {
-                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, _screen, z_buffer);
+                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, 
+                                                 _screen, z_buffer);
             }
         }
     }
