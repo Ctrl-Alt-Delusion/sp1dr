@@ -37,14 +37,48 @@ BarycentricCoords calculate_barycentric(const Vec2Int& p,
     return {u, v, w};
 }
 
-// Distance-based shading
+// Enhanced shading with improved character gradients and lighting
+char get_advanced_shade(float distance, float max_distance, 
+                       const Vec3Float& normal, const Vec3Float& light_dir) noexcept {
+    if (distance > max_distance) return ' ';
+    
+    // Calculate lighting factor using dot product
+    float lighting = std::max(0.0f, dot_product(normal.normalize(), light_dir.normalize()));
+    
+    // Distance attenuation
+    const float dist_factor = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
+    
+    // Combine lighting and distance for final intensity
+    const float intensity = lighting * dist_factor;
+    
+    // Enhanced character set with better gradients
+    constexpr char shade_chars[] = {
+        '@', '&', '%', '$', '#', 'X', 'A', 'M', 'N', 'W', 'Q', 'R', 'O', 'o', 'a', 'h',
+        'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'Y', 'U', 'J', 'C', 'L', 'z', 'c', 'v',
+        'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(', ')', '1', '{', '}', '[',
+        ']', '?', '-', '_', '+', '~', '<', '>', 'i', '!', 'l', 'I', ';', ':', ',', '"',
+        '^', '`', '\'', '.', ' '
+    };
+    constexpr int num_chars = sizeof(shade_chars) - 1;
+    
+    const int index = static_cast<int>(intensity * (num_chars - 1));
+    return shade_chars[std::clamp(index, 0, num_chars - 1)];
+}
+
+// Distance-based shading with improved character selection
 char get_distance_shade(float distance, float max_distance) noexcept {
     if (distance > max_distance) return ' ';
     
-    const float normalized = std::clamp(distance / max_distance, 0.0f, 1.0f);
+    const float normalized = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
     
-    // Optimized character array - fewer lookups
-    constexpr char shade_chars[] = {'@', '#', '8', '&', 'o', ':', '*', '.', '~', '-', '^', '\'', ' '};
+    // Improved character array with better visual gradients
+    constexpr char shade_chars[] = {
+        '@', '#', '8', '&', '%', 'B', 'M', 'N', 'W', 'Q', 'R', 'O', 'o', 'a', 'h',
+        'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'X', 'Y', 'U', 'J', 'C', 'L',
+        'z', 'c', 'v', 'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(',
+        '1', '{', '}', '[', ']', '?', '-', '_', '+', '~', '<', '>', 'i', '!', 'l',
+        'I', ';', ':', ',', '"', '^', '`', '\'', '.', ' '
+    };
     constexpr int num_chars = sizeof(shade_chars) - 1;
     
     const int index = static_cast<int>(normalized * (num_chars - 1));
@@ -54,15 +88,16 @@ char get_distance_shade(float distance, float max_distance) noexcept {
 char get_enhanced_distance_shade(float distance, float max_distance) noexcept {
     if (distance > max_distance) return ' ';
     
-    const float normalized = std::clamp(distance / max_distance, 0.0f, 1.0f);
+    const float normalized = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
     
-    // Extended character set for smoother gradients
+    // Ultra-smooth gradient with more characters
     constexpr char shade_chars[] = {
-        '@', '#', '8', '&', '%', 'B', 'M', 'N', 'W', 'Q', 'R', 'O', 'o', 'a', 'h',
-        'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'X', 'Y', 'U', 'J', 'C', 'L',
-        'z', 'c', 'v', 'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(',
-        '1', '{', '}', '[', ']', '?', '-', '_', '+', '~', '<', '>', 'i', '!', 'l',
-        'I', ';', ':', ',', '"', '^', '`', '\'', '.', ' '
+        '@', '&', '%', '$', '#', 'X', 'A', 'H', 'M', 'N', 'W', 'Q', 'R', 'P', 'D', 'O',
+        'o', 'a', 'h', 'k', 'b', 'd', 'p', 'q', 'g', 'w', 'm', 'Z', 'G', 'V', 'K', 'S',
+        'E', 'F', 'T', 'B', 'I', 'X', 'Y', 'U', 'J', 'C', 'L', 'z', 'c', 'v', 'u', 'n',
+        'x', 'r', 'j', 'f', 't', 's', 'e', '/', '\\', '|', '(', ')', '1', '2', '3', '4',
+        '5', '6', '7', '8', '9', '0', '{', '}', '[', ']', '?', '-', '_', '+', '=', '~',
+        '<', '>', 'i', '!', 'l', 'I', ';', ':', ',', '.', '"', '^', '`', '\'', ' '
     };
     constexpr int num_chars = sizeof(shade_chars) - 1;
     
@@ -174,9 +209,8 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
             // Z-buffer test and update
             if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
                 // UV mapping using barycentric coordinates
-                // Note: You might need to adjust this based on your UV coordinate system
-                const float u = bary.v; // These mappings might need adjustment
-                const float v = bary.w; // based on your specific UV layout
+                const float u = bary.v;
+                const float v = bary.w;
 
                 const char tex_char = textured_entity->get_texture_char(u, v);
                 
@@ -189,12 +223,16 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
     }
 }
 
-// 3. Enhanced shaded triangle rasterization for consistency
+// Enhanced shaded triangle rasterization with lighting
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                       float z0, float z1, float z2,
+                                      const Vec3Float& normal,
                                       Screen& screen,
                                       ZBuffer& z_buffer) {
     const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
+
+    // Light direction (you can make this configurable)
+    const Vec3Float light_dir = {0.707f, 0.707f, 0.0f}; // 45-degree angle
 
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
@@ -212,7 +250,7 @@ void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
             }
 
             if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
-                const char shade_char = get_distance_shade(depth);
+                const char shade_char = get_advanced_shade(depth, Config::MAX_VIEW_DISTANCE, normal, light_dir);
                 if (shade_char != ' ') {
                     screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, shade_char);
                 }
@@ -259,7 +297,7 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
         }
     }
 
-    // Initialize Z-buffer with improved class
+    // Initialize Z-buffer
     ZBuffer z_buffer(screen_size_uint.x, screen_size_uint.y);
 
     // Collect and sort entities by distance for better rendering order
@@ -337,15 +375,16 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
                 continue;
             }
 
-            // Backface culling
+            // Calculate face normal for lighting
             const Vec3Float& v0_cam = camera_vertices[face.x];
             const Vec3Float& v1_cam = camera_vertices[face.y];
             const Vec3Float& v2_cam = camera_vertices[face.z];
             
             const Vec3Float edge1 = v1_cam - v0_cam;
             const Vec3Float edge2 = v2_cam - v0_cam;
-            const Vec3Float normal = edge1.cross(edge2);
+            const Vec3Float normal = edge1.cross(edge2).normalize();
             
+            // Backface culling
             const Vec3Float face_center = (v0_cam + v1_cam + v2_cam) * (1.0f/3.0f);
             const Vec3Float view_dir = -face_center.normalize();
             
@@ -353,12 +392,12 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
                 continue; // Skip backfacing triangles
             }
 
-            // Render triangle with improved z-buffering
+            // Render triangle with enhanced shading
             if (textured_entity) {
                 rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, 
                                                    textured_entity.get(), _screen, z_buffer);
             } else {
-                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, 
+                rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, normal,
                                                  _screen, z_buffer);
             }
         }

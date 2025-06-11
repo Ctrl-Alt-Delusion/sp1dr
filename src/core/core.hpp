@@ -24,7 +24,7 @@ namespace Config {
     constexpr float BASE_SCALE = 15.0f;
     constexpr float NEAR_PLANE = 0.1f;
     constexpr float FAR_PLANE = 100.0f;
-    constexpr float MAX_VIEW_DISTANCE = 15.0f;
+    constexpr float MAX_VIEW_DISTANCE = 27.5f;
     constexpr size_t DEFAULT_FRAME_RATE = 60;
 }
 
@@ -47,23 +47,28 @@ BarycentricCoords calculate_barycentric(const Vec2Int& p,
                                         const Vec2Int& b, 
                                         const Vec2Int& c) noexcept;
 
+// Enhanced shading functions with lighting support
+char get_advanced_shade(float distance, float max_distance, 
+                       const Vec3Float& normal, const Vec3Float& light_dir) noexcept;
+
 // Distance-based shading functions
 char get_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
 char get_enhanced_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
 
 Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2, Screen& screen) noexcept;
 
-// Triangle rasterization functions
+// Enhanced triangle rasterization functions
 void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                  float z0, float z1, float z2,
                                  const ENTITY::TexturedMeshEntity* textured_entity,
                                  Screen& screen,
-                                 std::vector<std::vector<float>>& z_buffer);
+                                 class ZBuffer& z_buffer);
 
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                float z0, float z1, float z2,
+                               const Vec3Float& normal,
                                Screen& screen,
-                               std::vector<std::vector<float>>& z_buffer);
+                               class ZBuffer& z_buffer);
 
 // Camera space transformation
 Vec3Float world_to_camera_space(const Vec3Float& world_pos, 
@@ -73,6 +78,9 @@ Vec3Float world_to_camera_space(const Vec3Float& world_pos,
 Vec2Int project_to_screen(const Vec3Float& camera_pos, 
                           float focal_length,
                           const Vec2Float& screen_size) noexcept;
+
+// Utility function for dot product
+constexpr float dot_product(const Vec3Float& a, const Vec3Float& b) noexcept;
 
 // Core engine class
 class Core {
@@ -108,6 +116,7 @@ private:
     bool _is_running = true;
 };
 
+// Enhanced Z-Buffer class for depth testing
 class ZBuffer {
 private:
     std::vector<std::vector<float>> buffer;
@@ -143,8 +152,15 @@ public:
         height = h;
         buffer.resize(height, std::vector<float>(width, Config::FAR_PLANE));
     }
+    
+    // Get depth buffer visualization for debugging
+    char get_depth_visualization(size_t x, size_t y) const {
+        if (x >= width || y >= height) return ' ';
+        const float depth = buffer[y][x];
+        if (depth >= Config::FAR_PLANE) return ' ';
+        return get_distance_shade(depth, Config::MAX_VIEW_DISTANCE);
+    }
 };
-
 
 // Global entity manager (consider dependency injection in the future)
 extern ENTITY::EntityManager g_entity_manager;
