@@ -24,7 +24,7 @@ namespace Config {
     constexpr float BASE_SCALE = 15.0f;
     constexpr float NEAR_PLANE = 0.1f;
     constexpr float FAR_PLANE = 100.0f;
-    constexpr float MAX_VIEW_DISTANCE = 25.0f;
+    constexpr float MAX_VIEW_DISTANCE = 5.0f;
     constexpr size_t DEFAULT_FRAME_RATE = 60;
 }
 

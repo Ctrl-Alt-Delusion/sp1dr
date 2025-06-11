@@ -1,6 +1,8 @@
 #include "./core/core.hpp"
 #include <iostream>
 #include <memory>
+#include <algorithm>
+#include <random>
 
 void initialize_scene() {
     auto& entity_manager = CORE::g_entity_manager;
@@ -26,10 +28,50 @@ void initialize_scene() {
     // plain_cube1->set_scale({0.5f, 0.5f, 0.5f});
     // entity_manager.add_entity(plain_cube3);
     
-    auto plain_cube4 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
-    plain_cube4->set_position({-6.0f, 0.0f, -12.0f});
-    plain_cube4->set_scale({2.0f, 0.5f, 2.0f});
-    entity_manager.add_entity(plain_cube4);
+    // auto plain_cube4 = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
+    // plain_cube4->set_position({-6.0f, 0.0f, -12.0f});
+    // plain_cube4->set_scale({2.0f, 0.5f, 2.0f});
+    // entity_manager.add_entity(plain_cube4);
+
+    // --- Maze generation parameters ---
+    const int maze_width = 21; // must be odd for maze generation
+    const int maze_height = 21; // must be odd for maze generation
+    const float cell_size = 1.0f;
+    std::vector<std::vector<bool>> maze(maze_height, std::vector<bool>(maze_width, true));
+
+    // Ensure starting cell is within bounds
+    if (maze_height > 1 && maze_width > 1) {
+        maze[1][1] = false;
+        std::function<void(int, int)> carve = [&](int x, int y) {
+            std::vector<std::pair<int, int>> dirs = {{0,1},{1,0},{0,-1},{-1,0}};
+            // Shuffle directions for randomness
+            std::random_device rd;
+            std::mt19937 g(rd());
+            std::shuffle(dirs.begin(), dirs.end(), g);
+            for (auto [dx, dy] : dirs) {
+                int nx = x + dx * 2, ny = y + dy * 2;
+                if (nx > 0 && ny > 0 && nx < maze_width && ny < maze_height && maze[ny][nx]) {
+                    maze[y + dy][x + dx] = false;
+                    maze[ny][nx] = false;
+                    carve(nx, ny);
+                }
+            }
+        };
+        if (maze_height > 1 && maze_width > 1) {
+            carve(1, 1);
+        }
+    };
+
+    for (int y = 0; y < maze_height; ++y) {
+        for (int x = 0; x < maze_width; ++x) {
+            if (maze[y][x]) {
+                auto wall = std::make_shared<ENTITY::MeshEntity>(cube_mesh);
+                wall->set_position({(float)x * cell_size - 5.0f, 0.0f, (float)y * cell_size - 10.0f});
+                wall->set_scale({0.5f, 0.5f, 0.5f});
+                entity_manager.add_entity(wall);
+            }
+        }
+    }
     
     std::cout << "Scene initialized with " << entity_manager.get_entities().size() << " entities.\n";
 }
