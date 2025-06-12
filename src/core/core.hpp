@@ -13,10 +13,10 @@
 
 namespace CORE {
 
-using Vec2Int = MATH::Vec2<int>;
+using Vec2Int   = MATH::Vec2<int>;
 using Vec2Float = MATH::Vec2<float>;
 using Vec3Float = MATH::Vec3<float>;
-using Vec4Int = MATH::Vec4<int>;
+using Vec4Int   = MATH::Vec4<int>;
 
 // Configuration constants
 namespace Config {
@@ -38,7 +38,7 @@ struct BarycentricCoords {
     float u, v, w;
     
     constexpr bool is_inside() const noexcept {
-        return u >= -1e-6f && v >= -1e-6f && w >= -1e-6f; // Small epsilon for floating point precision
+        return u >= MATH::EPSILON && v >= MATH::EPSILON && w >= MATH::EPSILON; // Small epsilon for floating point precision
     }
 };
 
@@ -48,13 +48,15 @@ BarycentricCoords calculate_barycentric(const Vec2Int& p,
                                         const Vec2Int& b, 
                                         const Vec2Int& c) noexcept;
 
-// Enhanced shading functions with lighting support
-char get_advanced_shade(float distance, float max_distance, 
-                       const Vec3Float& normal, const Vec3Float& light_dir) noexcept;
-
 // Distance-based shading functions
+
+char get_custom_distance_shade(std::string shade_chars, 
+                               float distance, 
+                               float max_distance) noexcept;
 char get_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
 char get_enhanced_distance_shade(float distance, float max_distance = Config::MAX_VIEW_DISTANCE) noexcept;
+char get_advanced_shade(float distance, float max_distance, 
+                        const Vec3Float& normal, const Vec3Float& light_dir) noexcept; // Enhanced shading functions with lighting support
 
 Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2, Screen& screen) noexcept;
 
@@ -87,7 +89,7 @@ constexpr float dot_product(const Vec3Float& a, const Vec3Float& b) noexcept;
 // Core engine class
 class Core {
 public:
-    explicit Core(pair_uint screen_size);
+    explicit Core(Vec2Int screen_size);
     ~Core() = default;
     
     // Non-copyable, movable

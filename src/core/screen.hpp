@@ -10,9 +10,8 @@
 #include <windows.h>
 #endif
 
-typedef MATH::Vec2<size_t> pair_uint;
-
 namespace CORE {
+    using Vec2Int = MATH::Vec2<int>;
 
     // ScreenSettings in the future will hold
     // all relevant screen config settings
@@ -28,12 +27,12 @@ namespace CORE {
     // and the ability to paint the screen with pixels
     class Screen {
     public:
-        Screen(pair_uint screen_size = {80, 45}, ScreenSettings settings = DEFAULT_SETTINGS);
+        Screen(Vec2Int screen_size = {80, 45}, ScreenSettings settings = DEFAULT_SETTINGS);
         ~Screen() = default;
 
         void clear_screen();
-        bool set_pixel(pair_uint position, char rune);
-        bool set_pixel_color(pair_uint position, const COLOR::RGBColor& color);
+        bool set_pixel(Vec2Int position, char rune);
+        bool set_pixel_color(Vec2Int position, const COLOR::RGBColor& color);
 
         const std::vector<std::vector<char>>& get_screen_buffer() const {
             return this->screen_buffer;
@@ -47,7 +46,7 @@ namespace CORE {
             return change;
         }
 
-        const pair_uint get_size() {
+        const Vec2Int get_size() {
             return this->screen_size;
         } 
 
@@ -55,7 +54,7 @@ namespace CORE {
             change = c;
         }
     private:
-        pair_uint      screen_size     {};
+        Vec2Int        screen_size     {};
         ScreenSettings settings        {};
 
         std::vector<std::vector<char>> screen_buffer {};

@@ -2,6 +2,8 @@
 
 #include "screen.hpp"
 
+// danqzq: sometimes I wonder what if this was all it took to make a game engine..
+
 namespace CORE {
 
     class Renderer {

@@ -13,7 +13,7 @@ namespace MESHES {
         virtual ~Mesh() = default;
         virtual const std::vector<MATH::Vec3<float>>& getVertices() const = 0;
         virtual const std::vector<MATH::Vec2<size_t>>& getEdges() const = 0;
-        virtual const std::vector<Face>& getFaces() const = 0;  // New method
+        virtual const std::vector<Face>& getFaces() const = 0;
 
         virtual const std::vector<MATH::Vec2<float>>& getUVs() const = 0;
     };
@@ -81,7 +81,6 @@ namespace MESHES {
         const std::vector<MATH::Vec2<float>>& getUVs() const override {
             return uvs;
         }
-
     };
 
     extern Cube static_cube_mesh;

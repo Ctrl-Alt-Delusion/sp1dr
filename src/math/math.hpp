@@ -3,6 +3,13 @@
 #include <math.h>
 
 namespace MATH {
+    constexpr float PI = 3.14159265358979323846f;
+    constexpr float DEG_TO_RAD = PI / 180.0f;
+    constexpr float RAD_TO_DEG = 180.0f / PI;
+    constexpr float EPSILON = 1e-6f; // Small value for floating point comparisons
+    constexpr float SQUARE_ROOT_2 = 1.41421356237f; // sqrt(2)
+    constexpr float INVERSE_SQUARE_ROOT_2 = 0.70710678118f; // 1/sqrt(2)
+
     template<typename T>
     struct Vec2 {
         T x, y;
@@ -46,6 +53,10 @@ namespace MATH {
             return {y * other.z - z * other.y,
                     z * other.x - x * other.z,
                     x * other.y - y * other.x};
+        }
+
+        T dot(const Vec3& other) const {
+            return x * other.x + y * other.y + z * other.z;
         }
 
         inline Vec3 operator+(const Vec3& other) const {

@@ -5,7 +5,7 @@ namespace CORE {
     ScreenSettings DEFAULT_SETTINGS {60};
 
     // Screen constructor doing initial config 
-    Screen::Screen(pair_uint size, ScreenSettings set) {
+    Screen::Screen(Vec2Int size, ScreenSettings set) {
         this->screen_size = size;
         this->settings = set;
 
@@ -21,8 +21,8 @@ namespace CORE {
     }
 
     // Paint an individual pixel if valid position
-    bool Screen::set_pixel(pair_uint pos, char rune) {
-        if (pos.x >= this->screen_size.x || pos.y >= this->screen_size.y) {
+    bool Screen::set_pixel(Vec2Int pos, char rune) {
+        if (pos.x >= this->screen_size.x || pos.y >= this->screen_size.y || pos.x < 0 || pos.y < 0) {
             std::cerr << "invalid position coordinates entered | x : " << pos.x << " | y : " << pos.y << std::endl;
             return false;
         }
@@ -31,12 +31,12 @@ namespace CORE {
         return true; 
     }
 
-    bool Screen::set_pixel_color(pair_uint pos, const COLOR::RGBColor& color) {
-        if (pos.x >= this->screen_size.x || pos.y >= this->screen_size.y) {
+    bool Screen::set_pixel_color(Vec2Int pos, const COLOR::RGBColor& color) {
+        if (pos.x >= this->screen_size.x || pos.y >= this->screen_size.y || pos.x < 0 || pos.y < 0) {
             std::cerr << "invalid position coordinates entered | x : " << pos.x << " | y : " << pos.y << std::endl;
             return false;
         }
-        if (color_buffer.size() <= pos.y) {
+        if (static_cast<int>(color_buffer.size()) <= pos.y) {
             color_buffer.resize(this->screen_size.y, std::vector<COLOR::RGBColor>(this->screen_size.x));
         }
         this->color_buffer[pos.y][pos.x] = color;

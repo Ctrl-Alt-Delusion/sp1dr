@@ -14,6 +14,7 @@ namespace CORE {
 
 #ifdef _WIN32
 
+//TODO: handle multiple key presses
 char currently_pressed_key = 0;
 
 bool is_any_key_pressed() {

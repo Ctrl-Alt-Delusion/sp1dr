@@ -13,7 +13,7 @@ namespace CORE {
 
         for (size_t y = 0; y < buffer.size(); ++y) {
             std::ostringstream row_stream;
-            COLOR::RGBColor last_color = COLOR::BLACK;
+            auto last_color = COLOR::BLACK;
             bool color_active = false;
 
             const auto& row = buffer[y];
@@ -30,13 +30,14 @@ namespace CORE {
                         color_active = true;
                     }
                     row_stream << pixel;
-                } else {
-                    if (color_active) {
-                        row_stream << COLOR::ANSI_RESET;
-                        color_active = false;
-                    }
-                    row_stream << ' ';
+                    continue;
                 }
+                
+                if (color_active) {
+                    row_stream << COLOR::ANSI_RESET;
+                    color_active = false;
+                }
+                row_stream << ' ';
             }
 
             if (color_active) {
@@ -46,4 +47,6 @@ namespace CORE {
             std::cout << row_stream.str() << '\n';
         }
     }
+
+    //danqzq: [spawns in] little did I know how offscreen I was..
 }

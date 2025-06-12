@@ -39,11 +39,15 @@ BarycentricCoords calculate_barycentric(const Vec2Int& p,
 
 // Enhanced shading with improved character gradients and lighting
 char get_advanced_shade(float distance, float max_distance, 
-                       const Vec3Float& normal, const Vec3Float& light_dir) noexcept {
-    if (distance > max_distance) return ' ';
+                        const Vec3Float& normal, const Vec3Float& light_dir) noexcept {
+    if (distance > max_distance) {
+        return ' ';
+    }
     
+    // TODO: Make a Light struct
+
     // Calculate lighting factor using dot product
-    float lighting = std::max(0.0f, dot_product(normal.normalize(), light_dir.normalize()));
+    float lighting = std::max(0.0f, normal.normalize().dot(light_dir.normalize()));
     
     // Distance attenuation
     const float dist_factor = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
@@ -65,49 +69,34 @@ char get_advanced_shade(float distance, float max_distance,
     return shade_chars[std::clamp(index, 0, num_chars - 1)];
 }
 
-// Distance-based shading with improved character selection
-char get_distance_shade(float distance, float max_distance) noexcept {
-    if (distance > max_distance) return ' ';
+char get_custom_distance_shade(std::string shade_chars, 
+                               float distance, 
+                               float max_distance) noexcept {
+    if (distance > max_distance) {
+        return ' ';
+    }
     
     const float normalized = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
     
-    // Improved character array with better visual gradients
-    constexpr char shade_chars[] = {
-        '@', '#', '8', '&', '%', 'B', 'M', 'N', 'W', 'Q', 'R', 'O', 'o', 'a', 'h',
-        'k', 'b', 'd', 'p', 'q', 'w', 'm', 'Z', 'X', 'Y', 'U', 'J', 'C', 'L',
-        'z', 'c', 'v', 'u', 'n', 'x', 'r', 'j', 'f', 't', '/', '\\', '|', '(',
-        '1', '{', '}', '[', ']', '?', '-', '_', '+', '~', '<', '>', 'i', '!', 'l',
-        'I', ';', ':', ',', '"', '^', '`', '\'', '.', ' '
-    };
-    constexpr int num_chars = sizeof(shade_chars) - 1;
-    
+    // Use the provided character array for shading
+    const int num_chars = sizeof(shade_chars) - 1;
     const int index = static_cast<int>(normalized * (num_chars - 1));
+    
     return shade_chars[std::clamp(index, 0, num_chars - 1)];
+}
+
+char get_distance_shade(float distance, float max_distance) noexcept {
+    return get_custom_distance_shade(
+        "@#8&%BMNWRQoahkbdpqwmZXUYJCLzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\x22^`'. ",
+        distance, max_distance
+    );
 }
 
 char get_enhanced_distance_shade(float distance, float max_distance) noexcept {
-    if (distance > max_distance) return ' ';
-    
-    const float normalized = 1.0f - std::clamp(distance / max_distance, 0.0f, 1.0f);
-    
-    // Ultra-smooth gradient with more characters
-    constexpr char shade_chars[] = {
-        '@', '&', '%', '$', '#', 'X', 'A', 'H', 'M', 'N', 'W', 'Q', 'R', 'P', 'D', 'O',
-        'o', 'a', 'h', 'k', 'b', 'd', 'p', 'q', 'g', 'w', 'm', 'Z', 'G', 'V', 'K', 'S',
-        'E', 'F', 'T', 'B', 'I', 'X', 'Y', 'U', 'J', 'C', 'L', 'z', 'c', 'v', 'u', 'n',
-        'x', 'r', 'j', 'f', 't', 's', 'e', '/', '\\', '|', '(', ')', '1', '2', '3', '4',
-        '5', '6', '7', '8', '9', '0', '{', '}', '[', ']', '?', '-', '_', '+', '=', '~',
-        '<', '>', 'i', '!', 'l', 'I', ';', ':', ',', '.', '"', '^', '`', '\'', ' '
-    };
-    constexpr int num_chars = sizeof(shade_chars) - 1;
-    
-    const int index = static_cast<int>(normalized * (num_chars - 1));
-    return shade_chars[std::clamp(index, 0, num_chars - 1)];
-}
-
-// Utility function for dot product
-constexpr float dot_product(const Vec3Float& a, const Vec3Float& b) noexcept {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
+    return get_custom_distance_shade(
+        "@&%$#XAHMNWRQoahkbdpqgwmZGVKSEFTBIXYUJCLzcvunxrjft/\\|()1234567890{}[]?-_+=~<>i!lI;:,\x22^`'. ",
+        distance, max_distance
+    );
 }
 
 // Camera space transformation
@@ -134,9 +123,9 @@ Vec3Float world_to_camera_space(const Vec3Float& world_pos,
     const Vec3Float relative = world_pos - camera.position;
     
     return {
-        dot_product(relative, right),
-        dot_product(relative, up),
-        dot_product(relative, forward)
+        relative.dot(right),
+        relative.dot(up),
+        relative.dot(forward)
     };
 }
 
@@ -160,17 +149,13 @@ Vec2Int project_to_screen(const Vec3Float& camera_pos,
 
 Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2, Screen& screen) noexcept {
     const auto screen_size = screen.get_size();
-    const int min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
-    const int max_x = std::min(static_cast<int>(screen_size.x) - 1, std::max({p0.x, p1.x, p2.x}));
-    const int min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
-    const int max_y = std::min(static_cast<int>(screen_size.y) - 1, std::max({p0.y, p1.y, p2.y}));
+    const auto min_x = std::max(0, std::min({p0.x, p1.x, p2.x}));
+    const auto max_x = std::min(static_cast<int>(screen_size.x) - 1, std::max({p0.x, p1.x, p2.x}));
+    const auto min_y = std::max(0, std::min({p0.y, p1.y, p2.y}));
+    const auto max_y = std::min(static_cast<int>(screen_size.y) - 1, std::max({p0.y, p1.y, p2.y}));
 
     return {min_x, min_y, max_x, max_y};
 }
-
-#include "core.hpp" // adjust this include to your structure
-
-#include "../core/core.hpp" // Adjust include path as needed
 
 void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                  float z0, float z1, float z2,
@@ -179,16 +164,9 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
                                  CORE::Screen& screen,
                                  CORE::ZBuffer& z_buffer)
 {
-    const int width = screen.get_size().x;
-    const int height = screen.get_size().y;
-
-    int minX = std::max(0, std::min({p0.x, p1.x, p2.x}));
-    int maxX = std::min(width - 1, std::max({p0.x, p1.x, p2.x}));
-    int minY = std::max(0, std::min({p0.y, p1.y, p2.y}));
-    int maxY = std::min(height - 1, std::max({p0.y, p1.y, p2.y}));
-
-    for (int y = minY; y <= maxY; ++y) {
-        for (int x = minX; x <= maxX; ++x) {
+    const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
+    for (int y = min_y; y <= max_y; ++y) {
+        for (int x = min_x; x <= max_x; ++x) {
             Vec2Int p{x, y};
             auto bc = CORE::calculate_barycentric(p, p0, p1, p2);
 
@@ -196,43 +174,45 @@ void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec
             float beta  = bc.v;
             float gamma = bc.w;
 
-            if (alpha >= 0 && beta >= 0 && gamma >= 0) {
-                // Interpolate Z
-                float z = alpha * z0 + beta * z1 + gamma * z2;
+            if (alpha < 0 || beta < 0 || gamma < 0) {
+                continue;
+            }
 
-                if (z_buffer.test_and_set(x, y, z)) {
-                    // Interpolate UVs
-                    float u = alpha * uv0.x + beta * uv1.x + gamma * uv2.x;
-                    float v = alpha * uv0.y + beta * uv1.y + gamma * uv2.y;
+            float z = alpha * z0 + beta * z1 + gamma * z2;
+            if (z_buffer.test_and_set(x, y, z)) {
+                // Interpolate UVs
+                float u = alpha * uv0.x + beta * uv1.x + gamma * uv2.x;
+                float v = alpha * uv0.y + beta * uv1.y + gamma * uv2.y;
 
-                    auto sample = textured_entity->get_texture_sample(u, v);
-                    screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, sample.character);
-                    screen.set_pixel_color({static_cast<size_t>(x), static_cast<size_t>(y)}, sample.color);
-                }
+                auto sample = textured_entity->get_texture_sample(u, v);
+                screen.set_pixel({x, y}, sample.character);
+                screen.set_pixel_color({x, y}, sample.color);
             }
         }
     }
 }
 
 
-
-
 // Enhanced shaded triangle rasterization with lighting
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
-                                      float z0, float z1, float z2,
-                                      const Vec3Float& normal,
-                                      Screen& screen,
-                                      ZBuffer& z_buffer) {
+                               float z0, float z1, float z2,
+                               const Vec3Float& normal,
+                               Screen& screen,
+                               ZBuffer& z_buffer) {
     const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
 
     // Light direction (you can make this configurable)
-    const Vec3Float light_dir = {0.707f, 0.707f, 0.0f}; // 45-degree angle
+    const Vec3Float light_dir = {MATH::INVERSE_SQUARE_ROOT_2, MATH::INVERSE_SQUARE_ROOT_2, 0.0f}; // 45-degree angle
 
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
             const Vec2Int pixel = {x, y};
             const BarycentricCoords bary = calculate_barycentric(pixel, p0, p1, p2);
             
+            // We locked bary inside so you don't have to
+            // P.s bary is ok
+            // Mush1e: [enters room] make S capital bro
+            // P.S bary is no longer ok
             if (!bary.is_inside()) {
                 continue;
             }
@@ -243,10 +223,10 @@ void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
                 continue;
             }
 
-            if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
+            if (z_buffer.test_and_set(x, y, depth)) {
                 const char shade_char = get_advanced_shade(depth, Config::MAX_VIEW_DISTANCE, normal, light_dir);
                 if (shade_char != ' ') {
-                    screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, shade_char);
+                    screen.set_pixel({x, y}, shade_char);
                 }
             }
         }
@@ -254,7 +234,7 @@ void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
 }
 
 // Core class implementation
-Core::Core(pair_uint screen_size) 
+Core::Core(Vec2Int screen_size) 
     : _screen(screen_size, DEFAULT_SETTINGS), _renderer(_screen) {
 }
 
@@ -267,7 +247,7 @@ void Core::initialize() {
 bool Core::should_cull_entity(const std::shared_ptr<ENTITY::MeshEntity>& entity, 
                               const FirstPersonCamera& camera) const noexcept {
     const auto position = entity->get_position();
-    const auto scale = entity->get_scale();
+    const auto scale    = entity->get_scale();
     
     const Vec3Float entity_to_camera = position - camera.position;
     const float entity_distance = entity_to_camera.magnitude();
@@ -278,22 +258,23 @@ bool Core::should_cull_entity(const std::shared_ptr<ENTITY::MeshEntity>& entity,
 }
 
 void Core::update_game_logic(FirstPersonCamera& camera) {
-    const auto screen_size_uint = _screen.get_size();
-    const Vec2Float screen_size = {
-        static_cast<float>(screen_size_uint.x), 
-        static_cast<float>(screen_size_uint.y)
+    const auto screen_size = _screen.get_size();
+    const Vec2Float screen_size_float = {
+        static_cast<float>(screen_size.x), 
+        static_cast<float>(screen_size.y)
     };
 
     // Clear screen buffer
-    for (size_t y = 0; y < screen_size_uint.y; ++y) {
-        for (size_t x = 0; x < screen_size_uint.x; ++x) {
-            _screen.set_pixel({x, y}, ' ');
-            _screen.set_pixel_color({x, y}, COLOR::RGBColor{0, 0, 0});
-        }
+    const int total_pixels = screen_size.x * screen_size.y;
+    for (int i = 0; i < total_pixels; ++i) {
+        int x = i % screen_size.x;
+        int y = i / screen_size.x;
+        _screen.set_pixel({x, y}, ' ');
+        _screen.set_pixel_color({x, y}, COLOR::RGBColor{0, 0, 0});
     }
 
     // Initialize Z-buffer
-    ZBuffer z_buffer(screen_size_uint.x, screen_size_uint.y);
+    ZBuffer z_buffer(screen_size.x, screen_size.y);
 
     // Collect and sort entities by distance for better rendering order
     struct EntityWithDistance {
@@ -317,9 +298,9 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
 
     // Sort entities back-to-front for better transparency handling
     std::sort(sorted_entities.begin(), sorted_entities.end(),
-              [](const EntityWithDistance& a, const EntityWithDistance& b) {
-                  return a.distance > b.distance;
-              });
+        [](const EntityWithDistance& a, const EntityWithDistance& b) {
+            return a.distance > b.distance;
+        });
 
     // Render all entities
     for (const auto& entity_data : sorted_entities) {
@@ -341,7 +322,7 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             camera_vertices.push_back(cam_vertex);
             depths.push_back(cam_vertex.magnitude());
             
-            const Vec2Int projected = project_to_screen(cam_vertex, camera.focal_length, screen_size);
+            const Vec2Int projected = project_to_screen(cam_vertex, camera.focal_length, screen_size_float);
             projected_vertices.push_back(projected);
         }
 
@@ -365,7 +346,7 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             const float z2 = depths[face.z];
 
             // Distance culling
-            const float avg_depth = (z0 + z1 + z2) / 3.0f;
+            const float avg_depth = (z0 + z1 + z2) * 0.3333333f;
             if (avg_depth > Config::MAX_VIEW_DISTANCE) {
                 continue;
             }
@@ -380,10 +361,10 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
             const Vec3Float normal = edge1.cross(edge2).normalize();
             
             // Backface culling
-            const Vec3Float face_center = (v0_cam + v1_cam + v2_cam) * (1.0f/3.0f);
+            const Vec3Float face_center = (v0_cam + v1_cam + v2_cam) * 0.3333333f;
             const Vec3Float view_dir = -face_center.normalize();
             
-            if (dot_product(normal, view_dir) <= 0) {
+            if (normal.dot(view_dir) <= 0) {
                 continue; // Skip backfacing triangles
             }
 
