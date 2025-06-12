@@ -14,6 +14,8 @@ namespace MESHES {
         virtual const std::vector<MATH::Vec3<float>>& getVertices() const = 0;
         virtual const std::vector<MATH::Vec2<size_t>>& getEdges() const = 0;
         virtual const std::vector<Face>& getFaces() const = 0;  // New method
+
+        virtual const std::vector<MATH::Vec2<float>>& getUVs() const = 0;
     };
 
     class Cube : public Mesh {
@@ -51,6 +53,18 @@ namespace MESHES {
             Face{3, 2, 6}, Face{3, 6, 7}
         };
 
+        std::vector<MATH::Vec2<float>> uvs = {
+            // 8 UVs, one per vertex (you can tweak these as needed)
+            {0.0f, 0.0f}, // vertex 0
+            {1.0f, 0.0f}, // vertex 1
+            {1.0f, 1.0f}, // vertex 2
+            {0.0f, 1.0f}, // vertex 3
+            {0.0f, 0.0f}, // vertex 4
+            {1.0f, 0.0f}, // vertex 5
+            {1.0f, 1.0f}, // vertex 6
+            {0.0f, 1.0f}  // vertex 7
+        };
+
     public:
         const std::vector<MATH::Vec3<float>>& getVertices() const override {
             return vertices;
@@ -63,6 +77,11 @@ namespace MESHES {
         const std::vector<Face>& getFaces() const override {
             return faces;
         }
+
+        const std::vector<MATH::Vec2<float>>& getUVs() const override {
+            return uvs;
+        }
+
     };
 
     extern Cube static_cube_mesh;

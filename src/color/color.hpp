@@ -1,41 +1,61 @@
 #pragma once
-
 #include "../math/math.hpp"
-
 #include <string>
-#include <tuple>
 #include <sstream>
 #include <iomanip>
 
 namespace COLOR {
-typedef MATH::Vec3<int> RGBColor;
+    // Use Vec3 for RGB colors
+    typedef MATH::Vec3<int> RGBColor;
+    
+    // Constructor helper for RGBColor
+    inline RGBColor make_rgb(int r, int g, int b) {
+        RGBColor color;
+        color.x = r;
+        color.y = g;
+        color.z = b;
+        return color;
+    }
+    
+    // Basic color constants
+    const RGBColor WHITE = make_rgb(255, 255, 255);
+    const RGBColor BLACK = make_rgb(0, 0, 0);
+    const RGBColor RED = make_rgb(255, 0, 0);
+    const RGBColor GREEN = make_rgb(0, 255, 0);
+    const RGBColor BLUE = make_rgb(0, 0, 255);
+    const RGBColor YELLOW = make_rgb(255, 255, 0);
+    const RGBColor CYAN = make_rgb(0, 255, 255);
+    const RGBColor MAGENTA = make_rgb(255, 0, 255);
+    const RGBColor GRAY = make_rgb(128, 128, 128);
+    
+    // Convert RGB to hex string
+    static std::string to_hex(const RGBColor& color) {
+        std::ostringstream oss;
+        oss << "#" << std::hex << std::setfill('0') 
+            << std::setw(2) << color.x
+            << std::setw(2) << color.y 
+            << std::setw(2) << color.z;
+        return oss.str();
+    }
+    
+    // Simple color mixing
+    static RGBColor mix(const RGBColor& a, const RGBColor& b, float ratio = 0.5f) {
+        if (ratio < 0.0f) ratio = 0.0f;
+        if (ratio > 1.0f) ratio = 1.0f;
+        
+        return make_rgb(
+            static_cast<int>(a.x + ratio * (b.x - a.x)),
+            static_cast<int>(a.y + ratio * (b.y - a.y)),
+            static_cast<int>(a.z + ratio * (b.z - a.z))
+        );
+    }
 
-constexpr RGBColor WHITE = {255, 255, 255};
-constexpr RGBColor BLACK = {0, 0, 0};
-constexpr RGBColor RED = {255, 0, 0};
-constexpr RGBColor GREEN = {0, 255, 0};
-constexpr RGBColor BLUE = {0, 0, 255};
-constexpr RGBColor YELLOW = {255, 255, 0};
-constexpr RGBColor CYAN = {0, 255, 255};
-constexpr RGBColor MAGENTA = {255, 0, 255};
-constexpr RGBColor GRAY = {128, 128, 128};
+    inline std::string RGB_TO_ANSI_STRING(int r, int g, int b) {
+        std::ostringstream oss;
+        oss << "\033[38;2;" << r << ";" << g << ";" << b << "m";
+        return oss.str();
+    }
 
-const std::string DEFAULT_ANSI = "\033[0m"; // Reset ANSI color code
-
-static std::string RGB_to_HEX(int r, int g, int b) {
-    std::ostringstream oss;
-    oss << "#" << std::hex << std::setfill('0') << std::setw(2) << r
-        << std::setw(2) << g << std::setw(2) << b;
-    return oss.str();
-}
-
-static std::string RGB_to_HEX(const std::tuple<int, int, int>& rgb) {
-    return RGB_to_HEX(std::get<0>(rgb), std::get<1>(rgb), std::get<2>(rgb));
-}
-
-static std::string RGB_TO_ANSI_STRING(int r, int g, int b) {
-    return "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
-}
-
+    const std::string ANSI_RESET = "\033[0m";
+    
 } // namespace COLOR
-

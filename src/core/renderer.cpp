@@ -1,32 +1,49 @@
 #include "renderer.hpp"
-
 #include <iostream>
+#include <sstream>
 
 namespace CORE {
-
     Renderer::Renderer(Screen& screen_ref)
         : screen(screen_ref) {}
-
+    
     void Renderer::render() {
         screen.clear_screen();
+        const auto& buffer = screen.get_screen_buffer();
+        const auto& color_buffer = screen.get_color_buffer();
 
-        auto buffer = screen.get_screen_buffer();
-        auto color_buffer = screen.get_color_buffer();
-        for (const auto &row : buffer) {
-            for (int x = 0; x < row.size(); ++x) {
+        for (size_t y = 0; y < buffer.size(); ++y) {
+            std::ostringstream row_stream;
+            COLOR::RGBColor last_color = COLOR::BLACK;
+            bool color_active = false;
+
+            const auto& row = buffer[y];
+            const auto& color_row = color_buffer[y];
+
+            for (size_t x = 0; x < row.size(); ++x) {
                 const char pixel = row[x];
+
                 if (pixel != ' ') {
-                    std::cout << COLOR::RGB_TO_ANSI_STRING(
-                        color_buffer[&row - &buffer[0]][x].x,
-                        color_buffer[&row - &buffer[0]][x].y,
-                        color_buffer[&row - &buffer[0]][x].z
-                    ) << pixel;
+                    const auto& color = color_row[x];
+                    if (!color_active || color.x != last_color.x || color.y != last_color.y || color.z != last_color.z) {
+                        row_stream << COLOR::RGB_TO_ANSI_STRING(color.x, color.y, color.z);
+                        last_color = color;
+                        color_active = true;
+                    }
+                    row_stream << pixel;
                 } else {
-                    std::cout << ' ';
+                    if (color_active) {
+                        row_stream << COLOR::ANSI_RESET;
+                        color_active = false;
+                    }
+                    row_stream << ' ';
                 }
             }
-            std::cout << '\n';
+
+            if (color_active) {
+                row_stream << COLOR::ANSI_RESET;
+            }
+
+            std::cout << row_stream.str() << '\n';
         }
     }
-
-} // CORE
+}

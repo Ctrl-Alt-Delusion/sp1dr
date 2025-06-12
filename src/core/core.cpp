@@ -168,71 +168,54 @@ Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
     return {min_x, min_y, max_x, max_y};
 }
 
+#include "core.hpp" // adjust this include to your structure
+
+#include "../core/core.hpp" // Adjust include path as needed
+
 void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
-                                        float z0, float z1, float z2,
-                                        const ENTITY::TexturedMeshEntity* textured_entity,
-                                        Screen& screen,
-                                        ZBuffer& z_buffer) {
-    const auto [min_x, min_y, max_x, max_y] = calculate_bounding_box(p0, p1, p2, screen);
+                                 float z0, float z1, float z2,
+                                 const Vec2Float& uv0, const Vec2Float& uv1, const Vec2Float& uv2,
+                                 const ENTITY::TexturedMeshEntity* textured_entity,
+                                 CORE::Screen& screen,
+                                 CORE::ZBuffer& z_buffer)
+{
+    const int width = screen.get_size().x;
+    const int height = screen.get_size().y;
 
-    // Precompute triangle area for barycentric calculation optimization
-    const float triangle_area = static_cast<float>(
-        (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y)
-    );
-    
-    if (std::abs(triangle_area) < 1e-6f) {
-        return; // Degenerate triangle
-    }
+    int minX = std::max(0, std::min({p0.x, p1.x, p2.x}));
+    int maxX = std::min(width - 1, std::max({p0.x, p1.x, p2.x}));
+    int minY = std::max(0, std::min({p0.y, p1.y, p2.y}));
+    int maxY = std::min(height - 1, std::max({p0.y, p1.y, p2.y}));
 
-    const float inv_area = 1.0f / triangle_area;
+    for (int y = minY; y <= maxY; ++y) {
+        for (int x = minX; x <= maxX; ++x) {
+            Vec2Int p{x, y};
+            auto bc = CORE::calculate_barycentric(p, p0, p1, p2);
 
-    // Rasterize pixels within bounding box
-    for (int y = min_y; y <= max_y; ++y) {
-        for (int x = min_x; x <= max_x; ++x) {
-            const Vec2Int pixel = {x, y};
-            
-            // Calculate barycentric coordinates
-            const BarycentricCoords bary = calculate_barycentric(pixel, p0, p1, p2);
-            
-            if (!bary.is_inside()) {
-                continue;
-            }
+            float alpha = bc.u;
+            float beta  = bc.v;
+            float gamma = bc.w;
 
-            // Interpolate depth using barycentric coordinates
-            const float depth = bary.u * z0 + bary.v * z1 + bary.w * z2;
-            
-            // Early depth test
-            if (depth > Config::MAX_VIEW_DISTANCE || depth < Config::NEAR_PLANE) {
-                continue;
-            }
+            if (alpha >= 0 && beta >= 0 && gamma >= 0) {
+                // Interpolate Z
+                float z = alpha * z0 + beta * z1 + gamma * z2;
 
-            // Z-buffer test and update
-            if (z_buffer.test_and_set(static_cast<size_t>(x), static_cast<size_t>(y), depth)) {
-                // UV mapping using barycentric coordinates
-                const float u = bary.v;
-                const float v = bary.w;
+                if (z_buffer.test_and_set(x, y, z)) {
+                    // Interpolate UVs
+                    float u = alpha * uv0.x + beta * uv1.x + gamma * uv2.x;
+                    float v = alpha * uv0.y + beta * uv1.y + gamma * uv2.y;
 
-                const char tex_char = textured_entity->get_texture_char(u, v);
-                
-                // Only render non-transparent pixels
-                if (tex_char != ' ' && tex_char != '\0') {
-                    screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, tex_char);
-                }
-
-                std::shared_ptr<TEXTURE::Texture2D> texture2d = textured_entity->get_texture();
-                if (texture2d) {
-                    auto colored_texture = std::dynamic_pointer_cast<TEXTURE::ColoredTexture2D>(texture2d);
-                    if (colored_texture) {
-                        auto color_pattern = colored_texture->get_color_pattern();
-                        const size_t color_index = static_cast<size_t>(u * (color_pattern.size() - 1));
-                        const COLOR::RGBColor color = color_pattern[color_index];
-                        screen.set_pixel_color({static_cast<size_t>(x), static_cast<size_t>(y)}, color);
-                    }
+                    auto sample = textured_entity->get_texture_sample(u, v);
+                    screen.set_pixel({static_cast<size_t>(x), static_cast<size_t>(y)}, sample.character);
+                    screen.set_pixel_color({static_cast<size_t>(x), static_cast<size_t>(y)}, sample.color);
                 }
             }
         }
     }
 }
+
+
+
 
 // Enhanced shaded triangle rasterization with lighting
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
@@ -406,8 +389,14 @@ void Core::update_game_logic(FirstPersonCamera& camera) {
 
             // Render triangle with enhanced shading
             if (textured_entity) {
-                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2, 
-                                                   textured_entity.get(), _screen, z_buffer);
+                const auto& uvs = mesh->getUVs();
+                const Vec2Float uv0 = uvs[face.x];
+                const Vec2Float uv1 = uvs[face.y];
+                const Vec2Float uv2 = uvs[face.z];
+
+                rasterize_textured_triangle(p0, p1, p2, z0, z1, z2,
+                                            uv0, uv1, uv2,
+                                            textured_entity.get(), _screen, z_buffer);
             } else {
                 rasterize_shaded_triangle(p0, p1, p2, z0, z1, z2, normal,
                                                  _screen, z_buffer);

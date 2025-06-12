@@ -31,6 +31,7 @@ namespace Config {
 // Forward declarations
 class Screen;
 class FirstPersonCamera;
+class ZBuffer;
 
 // Barycentric coordinate calculation for triangle rasterization
 struct BarycentricCoords {
@@ -60,9 +61,10 @@ Vec4Int calculate_bounding_box(const Vec2Int& p0, const Vec2Int& p1, const Vec2I
 // Enhanced triangle rasterization functions
 void rasterize_textured_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                  float z0, float z1, float z2,
+                                 const Vec2Float& uv0, const Vec2Float& uv1, const Vec2Float& uv2,
                                  const ENTITY::TexturedMeshEntity* textured_entity,
                                  Screen& screen,
-                                 class ZBuffer& z_buffer);
+                                 ZBuffer& z_buffer);
 
 void rasterize_shaded_triangle(const Vec2Int& p0, const Vec2Int& p1, const Vec2Int& p2,
                                float z0, float z1, float z2,
