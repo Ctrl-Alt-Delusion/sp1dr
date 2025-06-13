@@ -2,8 +2,6 @@
 
 #include <math.h>
 
-// TODO ADD BARRY HERE 
-
 namespace MATH {
     constexpr float PI = 3.14159265358979323846f;
     constexpr float DEG_TO_RAD = PI / 180.0f;
@@ -11,6 +9,15 @@ namespace MATH {
     constexpr float EPSILON = 1e-6f; // Small value for floating point comparisons
     constexpr float SQUARE_ROOT_2 = 1.41421356237f; // sqrt(2)
     constexpr float INVERSE_SQUARE_ROOT_2 = 0.70710678118f; // 1/sqrt(2)
+
+    // Barycentric coordinate calculation for triangle rasterization
+    struct BarycentricCoordinates {
+        float u, v, w;
+        
+        constexpr bool is_inside() const noexcept {
+            return u >= EPSILON && v >= EPSILON && w >= EPSILON; // Small epsilon for floating point precision
+        }
+    };
 
     template<typename T>
     struct Vec2 {

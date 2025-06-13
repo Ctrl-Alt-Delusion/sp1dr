@@ -1,0 +1,3 @@
+namespace COMPONENT {
+    struct Component {};
+}
