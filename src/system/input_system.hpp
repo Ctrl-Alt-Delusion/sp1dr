@@ -77,7 +77,6 @@ namespace SYSTEM {
         bool input_char_ready = false;
     #endif
 
-    public:
     #if !defined(_WIN32)
         void enable_raw_mode();
         void disable_raw_mode();
@@ -87,10 +86,10 @@ namespace SYSTEM {
         bool is_any_key_pressed();
         char get_pressed_key();
         void poll_input();
+
+    public:
         std::string& get_input_buffer();
-
         void process() override;
-
     };
 
 }
