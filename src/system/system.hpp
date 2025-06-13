@@ -1,3 +1,5 @@
+#pragma once
+
 namespace SYSTEM {
     // System interface for processing entities
     class System {

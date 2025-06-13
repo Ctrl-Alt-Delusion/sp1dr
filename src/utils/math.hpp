@@ -49,6 +49,10 @@ namespace MATH {
     struct Vec3 {
         T x, y, z;
 
+        static Vec3<T> zero() {
+            return {0, 0, 0};
+        }
+
         T magnitude() const {
             return sqrt(x * x + y * y + z * z);
         }
