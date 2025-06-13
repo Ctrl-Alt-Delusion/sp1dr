@@ -10,7 +10,7 @@ namespace COMPONENT {
 
     class PositionComponent : public Component {
     private:
-        Vec3Float position {MATH::Vec3<float>::zero()};
+        Vec3Float position {Vec3Float::zero()};
     public:
         explicit PositionComponent(Vec3Float pos) : position(pos) {};
 
