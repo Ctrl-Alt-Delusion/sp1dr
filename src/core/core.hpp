@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../entity/entity.hpp"
-#include "../system/system.hpp"
+#include "../core/entity.hpp"
+#include "../core/system.hpp"
 
 namespace CORE {
     class Core {
