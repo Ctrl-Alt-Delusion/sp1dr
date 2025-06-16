@@ -10,6 +10,8 @@ namespace CORE {
     constexpr uint64_t ILLEGAL_ENTITY = MAX_ENTITIES + 1;
     constexpr uint16_t MAX_COMPONENTS = 64;
 
+    class EntityManager; // Forward declaration
+
     class Entity {
     private:
         uint32_t id;
@@ -25,13 +27,13 @@ namespace CORE {
     public:
         Entity(EntityManager* em) : id(next_entity_id++), entityMan(em) {}
 
-        uint64_t get_id() const{
+        uint64_t get_id() const {
             return this->id;
         }
 
         // Bary wishes he was this cool 
         template <typename T> 
-        bool has_component() const{
+        bool has_component() const {
             return component_mask[get_component_type<T>()];
         }
 

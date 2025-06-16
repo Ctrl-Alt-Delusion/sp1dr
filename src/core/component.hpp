@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../utils/exceptions.hpp"
+
 #include <cstdint>
 #include <exception>
 #include <string>
@@ -10,7 +12,7 @@ namespace CORE {
     using EntityId = uint32_t;
 
     // Pls inherit me (,,>﹏<,,)
-    class Component {
+    struct Component {
         virtual ~Component() = default;
     };
 
@@ -34,7 +36,7 @@ namespace CORE {
         T& get(uint32_t entity_id) {
             auto it = entity_to_index.find(entity_id);
             if (it == entity_to_index.end()) {
-                throw std::runtime_error("Component not found for entity: " + std::to_string(entity_id));
+                throw EXCEPTIONS::ComponentNotFoundException(entity_id, typeid(T));
             }
             return components[it->second];
         }
@@ -42,7 +44,7 @@ namespace CORE {
         void remove(uint32_t entity_id) {
             auto it = entity_to_index.find(entity_id);
             if (it == entity_to_index.end()) {
-                throw std::runtime_error("Component not found for entity: " + std::to_string(entity_id));
+                throw EXCEPTIONS::ComponentNotFoundException(entity_id, typeid(T));
             }
 
             // swap to last and pop_back [sex sounds here] (mushie: ya haram bro)

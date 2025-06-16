@@ -11,7 +11,7 @@
 
 namespace CORE {
     class EntityManager;
-    static EntityManager entityMan = EntityManager();
+    EntityManager* entityMan;
 
     class EntityManager {
     private:

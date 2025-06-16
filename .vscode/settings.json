@@ -75,6 +75,10 @@
         "stop_token": "cpp",
         "text_encoding": "cpp",
         "thread": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "list": "cpp",
+        "unordered_set": "cpp",
+        "flat_map": "cpp",
+        "flat_set": "cpp"
     }
 }
